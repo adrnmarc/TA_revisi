@@ -12,7 +12,6 @@ class Tagihan extends Model
     protected $table = 'tagihans';
     protected $primaryKey = 'id_tagihan';
 
-    
     protected $fillable = ['nama_tagihan', 'jatuh_tempo', 'nis'];
 
     /**

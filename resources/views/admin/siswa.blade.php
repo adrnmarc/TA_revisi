@@ -58,17 +58,29 @@
     </div>
 
     {{-- Modal Tambah --}}
-    <div id="modalTambah" class="fixed inset-0 bg-slate-900/50 hidden z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 mx-auto mt-10">
-            <h3 class="font-bold text-slate-800 mb-4">Tambah Siswa Baru</h3>
+    <div id="modalTambah" class="fixed inset-0 bg-slate-900/50 hidden z-50 p-4 flex items-start justify-center overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 my-10 shadow-xl relative">
+            {{-- Tombol Close X Silang --}}
+            <button type="button" onclick="tutupModal('modalTambah')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <h3 class="font-bold text-slate-800 mb-4 text-lg">Tambah Siswa Baru</h3>
             <form action="/admin/siswa" method="POST" class="space-y-3">
                 @csrf
                 <input type="text" name="nis" placeholder="NIS" required class="w-full p-2.5 border rounded-xl bg-slate-50">
                 <input type="text" name="nama" placeholder="Nama Lengkap" required class="w-full p-2.5 border rounded-xl bg-slate-50">
-                <select name="kelas" class="w-full p-2.5 border rounded-xl bg-slate-50">
-                    <option value="TK A (Matahari)">TK A (Matahari)</option>
-                    <option value="TK B (Bulan)">TK B (Bulan)</option>
+                
+                <select name="kelas" required class="w-full p-2.5 border rounded-xl bg-slate-50">
+                    <option value="" disabled selected>Pilih Kelas / Kelompok</option>
+                    <option value="TK A - Kelompok A">TK A - Kelompok A</option>
+                    <option value="TK A - Kelompok B">TK A - Kelompok B</option>
+                    <option value="TK B - Kelompok A">TK B - Kelompok A</option>
+                    <option value="TK B - Kelompok B">TK B - Kelompok B</option>
                 </select>
+                
                 <input type="text" name="wali" placeholder="Wali" required class="w-full p-2.5 border rounded-xl bg-slate-50">
                 <input type="text" name="kontak" placeholder="Kontak" required class="w-full p-2.5 border rounded-xl bg-slate-50">
                 <input type="text" name="nama_orangtua" placeholder="Nama Orang Tua" required class="w-full p-2.5 border rounded-xl bg-slate-50">
@@ -78,23 +90,38 @@
                 </select>
                 <input type="date" name="tanggal_lahir" class="w-full p-2.5 border rounded-xl bg-slate-50">
                 <textarea name="alamat" placeholder="Alamat" class="w-full p-2.5 border rounded-xl bg-slate-50"></textarea>
-                <button type="submit" class="w-full py-2.5 bg-blue-600 text-white rounded-xl">Simpan</button>
+                
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="tutupModal('modalTambah')" class="w-1/3 py-2.5 bg-slate-200 text-slate-700 rounded-xl font-semibold">Batal</button>
+                    <button type="submit" class="w-2/3 py-2.5 bg-blue-600 text-white rounded-xl font-semibold">Simpan</button>
+                </div>
             </form>
         </div>
     </div>
 
     {{-- Modal Edit --}}
-    <div id="modalEdit" class="fixed inset-0 bg-slate-900/50 hidden z-50 p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 mx-auto mt-10">
-            <h3 class="font-bold text-slate-800 mb-4">Edit Data Siswa</h3>
+    <div id="modalEdit" class="fixed inset-0 bg-slate-900/50 hidden z-50 p-4 flex items-start justify-center overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 my-10 shadow-xl relative">
+            {{-- Tombol Close X Silang --}}
+            <button type="button" onclick="tutupModal('modalEdit')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <h3 class="font-bold text-slate-800 mb-4 text-lg">Edit Data Siswa</h3>
             <form id="formEdit" method="POST" class="space-y-3">
                 @csrf @method('PUT')
                 <input type="text" name="nis" id="edit_nis" class="w-full p-2.5 border rounded-xl bg-slate-50">
                 <input type="text" name="nama" id="edit_nama" class="w-full p-2.5 border rounded-xl bg-slate-50">
+                
                 <select name="kelas" id="edit_kelas" class="w-full p-2.5 border rounded-xl bg-slate-50">
-                    <option value="TK A (Matahari)">TK A (Matahari)</option>
-                    <option value="TK B (Bulan)">TK B (Bulan)</option>
+                    <option value="TK A - Kelompok A">TK A - Kelompok A</option>
+                    <option value="TK A - Kelompok B">TK A - Kelompok B</option>
+                    <option value="TK B - Kelompok A">TK B - Kelompok A</option>
+                    <option value="TK B - Kelompok B">TK B - Kelompok B</option>
                 </select>
+                
                 <input type="text" name="wali" id="edit_wali" class="w-full p-2.5 border rounded-xl bg-slate-50">
                 <input type="text" name="kontak" id="edit_kontak" class="w-full p-2.5 border rounded-xl bg-slate-50">
                 <input type="text" name="nama_orangtua" id="edit_nama_orangtua" class="w-full p-2.5 border rounded-xl bg-slate-50">
@@ -104,14 +131,27 @@
                 </select>
                 <input type="date" name="tanggal_lahir" id="edit_tanggal_lahir" class="w-full p-2.5 border rounded-xl bg-slate-50">
                 <textarea name="alamat" id="edit_alamat" class="w-full p-2.5 border rounded-xl bg-slate-50"></textarea>
-                <button type="submit" class="w-full py-2.5 bg-blue-600 text-white rounded-xl">Update</button>
+                
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="tutupModal('modalEdit')" class="w-1/3 py-2.5 bg-slate-200 text-slate-700 rounded-xl font-semibold">Batal</button>
+                    <button type="submit" class="w-2/3 py-2.5 bg-blue-600 text-white rounded-xl font-semibold">Update</button>
+                </div>
             </form>
         </div>
     </div>
 
     <script>
-        document.getElementById('btnTambahSiswa').onclick = () => document.getElementById('modalTambah').classList.remove('hidden');
+        // Fungsi Membuka Modal Tambah
+        document.getElementById('btnTambahSiswa').onclick = () => {
+            document.getElementById('modalTambah').classList.remove('hidden');
+        };
+
+        // Fungsi Menutup Modal secara Umum
+        function tutupModal(idModal) {
+            document.getElementById(idModal).classList.add('hidden');
+        }
         
+        // Fungsi Membuka dan Mengisi Modal Edit
         function editSiswa(id, nis, nama, kelas, wali, kontak, nama_ortu, jk, tgl, alamat) {
             document.getElementById('modalEdit').classList.remove('hidden');
             document.getElementById('formEdit').action = '/admin/siswa/' + id;
@@ -124,6 +164,19 @@
             document.getElementById('edit_jenis_kelamin').value = jk;
             document.getElementById('edit_tanggal_lahir').value = tgl;
             document.getElementById('edit_alamat').value = alamat;
+        }
+
+        // Fitur Tambahan: Menutup modal ketika area gelap (backdrop) di luar box diklik
+        window.onclick = function(event) {
+            const modalTambah = document.getElementById('modalTambah');
+            const modalEdit = document.getElementById('modalEdit');
+            
+            if (event.target === modalTambah) {
+                tutupModal('modalTambah');
+            }
+            if (event.target === modalEdit) {
+                tutupModal('modalEdit');
+            }
         }
     </script>
 @endsection
