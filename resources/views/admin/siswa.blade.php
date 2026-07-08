@@ -147,10 +147,11 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Kelas</label>
                     <select name="kelas" required
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
-                        <option value="">-- Pilih Kelas --</option>
-                        <option value="TK A">TK A</option>
-                        <option value="TK B">TK B</option>
-                        <option value="Playgroup">Playgroup</option>
+                        <option value="">-- Pilih Kelas / Kelompok --</option>
+                        <option value="TK A - Kelompok 1">TK A - Kelompok 1</option>
+                        <option value="TK A - Kelompok 2">TK A - Kelompok 2</option>
+                        <option value="TK B - Kelompok 1">TK B - Kelompok 1</option>
+                        <option value="TK B - Kelompok 2">TK B - Kelompok 2</option>
                     </select>
                 </div>
                 <div>
@@ -233,9 +234,10 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Kelas</label>
                     <select name="kelas" id="edit_kelas" required
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
-                        <option value="TK A">TK A</option>
-                        <option value="TK B">TK B</option>
-                        <option value="Playgroup">Playgroup</option>
+                        <option value="TK A - Kelompok 1">TK A - Kelompok 1</option>
+                        <option value="TK A - Kelompok 2">TK A - Kelompok 2</option>
+                        <option value="TK B - Kelompok 1">TK B - Kelompok 1</option>
+                        <option value="TK B - Kelompok 2">TK B - Kelompok 2</option>
                     </select>
                 </div>
                 <div>
@@ -385,8 +387,8 @@
                 document.getElementById('edit_jk_p').checked = true;
             }
 
-            // Sembunyikan text error bawaan javascript sebelum digunakan
-            document.getElementById('error_edit_nis').classWithJs = document.getElementById('error_edit_nis').classList.add('hidden');
+            // Sembunyikan text error bawaan sebelum digunakan
+            document.getElementById('error_edit_nis').classList.add('hidden');
             document.getElementById('modalEditSiswa').classList.remove('hidden');
         }
 

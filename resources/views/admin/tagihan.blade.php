@@ -69,39 +69,37 @@
                                 Rp {{ number_format(optional($tagihan->detailTagihan)->jumlah_bayar ?? 0, 0, ',', '.') }}
                             </td>
                             <td class="py-4 px-6">
-    @php
-        $status = optional($tagihan->detailTagihan)->status_tagihan ?? 'Belum Lunas';
-    @endphp
+                                @php
+                                    $status = optional($tagihan->detailTagihan)->status_tagihan ?? 'Belum Lunas';
+                                @endphp
 
-    @if($status == 'Lunas')
-        <span class="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg border border-emerald-100">
-            Lunas
-        </span>
-    @elseif($status == 'Dicicil')
-        <span class="px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 rounded-lg border border-amber-100">
-            Dicicil
-        </span>
-    @else
-        <span class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 rounded-lg border border-rose-100">
-            Belum Lunas
-        </span>
-    @endif
-</td>
+                                @if($status == 'Lunas')
+                                    <span class="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg border border-emerald-100">
+                                        Lunas
+                                    </span>
+                                @elseif($status == 'Dicicil')
+                                    <span class="px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 rounded-lg border border-amber-100">
+                                        Dicicil
+                                    </span>
+                                @else
+                                    <span class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 rounded-lg border border-rose-100">
+                                        Belum Lunas
+                                    </span>
+                                @endif
+                            </td>
                             <td class="py-4 px-6">
                                 <div class="flex items-center justify-center gap-2">
-                                    {{-- Mengirim parameter $tagihan->nis ke JavaScript modal edit --}}
+                                    {{-- Tombol Edit Menggunakan HTML Data Attributes --}}
                                     <button type="button"
-    onclick="openEditModal(
-        '{{ $tagihan->id_tagihan }}',
-        '{{ $tagihan->nis }}',
-        '{{ $tagihan->nama_tagihan }}',
-        '{{ optional($tagihan->detailTagihan)->jumlah_bayar ?? 0 }}',
-        '{{ \Carbon\Carbon::parse($tagihan->jatuh_tempo)->format('Y-m-d') }}',
-        '{{ optional($tagihan->detailTagihan)->status_tagihan ?? "Belum Lunas" }}'
-    )"
-    class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer">
-    <i data-lucide="pencil" class="w-4 h-4"></i>
-</button>
+                                            class="btn-edit-tagihan p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                            data-id="{{ $tagihan->id_tagihan }}"
+                                            data-nis="{{ $tagihan->nis }}"
+                                            data-jenis="{{ $tagihan->nama_tagihan }}"
+                                            data-nominal="{{ optional($tagihan->detailTagihan)->jumlah_bayar ?? 0 }}"
+                                            data-tanggal="{{ \Carbon\Carbon::parse($tagihan->jatuh_tempo)->format('Y-m-d') }}"
+                                            data-status="{{ optional($tagihan->detailTagihan)->status_tagihan ?? 'Belum Lunas' }}">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </button>
                                     
                                     <form action="/admin/tagihan/{{ $tagihan->id_tagihan }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data tagihan ini?')">
                                         @csrf
@@ -159,17 +157,16 @@
                 @csrf
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Pilih Siswa</label>
-                    <select name="siswa_id" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                    <select name="siswa_id" required oninvalid="this.setCustomValidity('Silakan pilih salah satu siswa dalam daftar.')" oninput="this.setCustomValidity('')" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="">-- Pilih Anak Didik --</option>
                         @foreach($daftarSiswa as $siswa)
-                            {{-- Value dikunci menggunakan $siswa->nis agar sinkron ke database --}}
                             <option value="{{ $siswa->nis }}">{{ $siswa->nama }} ({{ $siswa->kelas }})</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Tagihan</label>
-                    <select name="jenis_tagihan" id="buat_jenis_tagihan" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                    <select name="jenis_tagihan" id="buat_jenis_tagihan" required oninvalid="this.setCustomValidity('Silakan tentukan jenis tagihan terlebih dahulu.')" oninput="this.setCustomValidity('')" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="" disabled selected data-harga="">-- Pilih Jenis Tagihan --</option>
                         <option value="Uang Sekolah / Uang Program" data-harga="1000000">Uang Sekolah (Uang Program)</option>
                         <option value="Uang Ekskul" data-harga="100000">Uang Ekskul</option>
@@ -180,7 +177,7 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Nominal (Rupiah)</label>
-                    <input type="number" name="nominal" id="buat_nominal" required placeholder="Contoh: 350000" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                    <input type="number" name="nominal" id="buat_nominal" required oninvalid="this.setCustomValidity('Kolom nominal ini wajib diisi dengan angka.')" oninput="this.setCustomValidity('')" placeholder="Contoh: 350000" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Tanggal Tagihan Dibuat</label>
@@ -212,7 +209,6 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Pilih Siswa</label>
                     <select name="siswa_id" id="edit_siswa_id" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         @foreach($daftarSiswa as $siswa)
-                            {{-- Value dikunci menggunakan $siswa->nis agar sinkron ke database --}}
                             <option value="{{ $siswa->nis }}">{{ $siswa->nama }} ({{ $siswa->kelas }})</option>
                         @endforeach
                     </select>
@@ -339,20 +335,31 @@
                     });
                 }
             });
+
+            // Kontrol Pembacaan Modal Edit Menggunakan Data Attributes
+            const tombolEdit = document.querySelectorAll('.btn-edit-tagihan');
+            tombolEdit.forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const nis = this.getAttribute('data-nis');
+                    const jenis = this.getAttribute('data-jenis');
+                    const nominal = this.getAttribute('data-nominal');
+                    const tanggal = this.getAttribute('data-tanggal');
+                    const status = this.getAttribute('data-status');
+
+                    document.getElementById('formEditTagihan').action = '/admin/tagihan/' + id;
+                    document.getElementById('edit_siswa_id').value = nis;
+                    document.getElementById('edit_jenis_tagihan').value = jenis;
+                    document.getElementById('edit_nominal').value = nominal;
+                    document.getElementById('edit_tanggal_tagihan').value = tanggal;
+                    document.getElementById('edit_status_tagihan').value = status;
+                    
+                    document.getElementById('modalEditTagihan').classList.remove('hidden');
+                });
+            });
         });
 
-        // Kontrol Modal Edit Terpisah
-        function openEditModal(id, nis, jenis, nominal, tanggal, status) {
-            document.getElementById('formEditTagihan').action = '/admin/tagihan/' + id;
-            document.getElementById('edit_siswa_id').value = nis;
-            document.getElementById('edit_jenis_tagihan').value = jenis;
-            document.getElementById('edit_nominal').value = nominal;
-            document.getElementById('edit_tanggal_tagihan').value = tanggal;
-            document.getElementById('edit_status_tagihan').value = status;
-            
-            document.getElementById('modalEditTagihan').classList.remove('hidden');
-        }
-
+        // Fungsi Menutup Modal Edit
         function closeEditModal() {
             document.getElementById('modalEditTagihan').classList.add('hidden');
         }
