@@ -85,6 +85,21 @@
         @else
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
                 @foreach ($tagihans as $tagihan)
+                    @php
+                        $namaIuranLower = strtolower($tagihan->nama_iuran);
+                        $isSpp = \Illuminate\Support\Str::contains($namaIuranLower, 'spp');
+                        
+                        // Deteksi Uang Program / Uang Sekolah yang BOLEH dicicil
+                        $isProgram = \Illuminate\Support\Str::contains($namaIuranLower, 'program') || \Illuminate\Support\Str::contains($namaIuranLower, 'sekolah');
+                        
+                        // Menghitung rekomendasi cicilan jika bertipe Uang Program
+                        $maxCicilan = 3;
+                        $sudahDicicil = isset($tagihan->pembayarans) ? $tagihan->pembayarans->where('status', 'Diterima')->count() : 0;
+                        $sisaSlotCicilan = $maxCicilan - $sudahDicicil;
+                        
+                        $rekomendasiCicilan = ($sisaSlotCicilan > 0) ? ceil($tagihan->sisa_tagihan / $sisaSlotCicilan) : $tagihan->sisa_tagihan;
+                    @endphp
+
                     <div class="bg-white rounded-2xl border-2 border-gray-100 p-6 shadow-sm hover:shadow-md transition duration-300 relative">
                         <div class="flex justify-between items-start mb-4">
                             <div>
@@ -95,7 +110,7 @@
                             </div>
                             @if($tagihan->status_tagihan == 'Belum Lunas')
                                 <span class="bg-red-50 text-red-600 text-xs px-2.5 py-1 rounded-full font-bold">BELUM LUNAS</span>
-                            @elseif($tagihan->status_tagihan == 'Menyicil' || $tagihan->status_tagihan == 'Mencicil')
+                            @elseif($tagihan->status_tagihan == 'Menyicil' || $tagihan->status_tagihan == 'Mencicil' || $tagihan->status_tagihan == 'Dicicil')
                                 <span class="bg-amber-50 text-amber-600 text-xs px-2.5 py-1 rounded-full font-bold">MENCICIL</span>
                             @else
                                 <span class="bg-blue-50 text-blue-600 text-xs px-2.5 py-1 rounded-full font-bold">{{ $tagihan->status_tagihan }}</span>
@@ -105,9 +120,6 @@
                         <div class="border-t border-gray-50 pt-4 mt-4">
                             <p class="text-xs text-gray-400">Sisa Tagihan</p>
                             <h5 class="text-2xl font-black text-gray-800 mt-1">Rp {{ number_format($tagihan->sisa_tagihan, 0, ',', '.') }}</h5>
-                            @if(isset($tagihan->pembayarans_sum_jumlah_diterima) && $tagihan->pembayarans_sum_jumlah_diterima > 0)
-                                <p class="text-xs text-emerald-600 mt-1 font-medium">Sudah dibayar: Rp {{ number_format($tagihan->pembayarans_sum_jumlah_diterima, 0, ',', '.') }}</p>
-                            @endif
                         </div>
 
                         {{-- Panel Pilihan Pembayaran di Setiap Card --}}
@@ -115,11 +127,13 @@
                             <label class="flex items-center space-x-3 cursor-pointer">
                                 <input type="checkbox" name="tagihan_id[]" value="{{ $tagihan->id_detail }}" 
                                        class="tagihan-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5" 
-                                       data-sisa="{{ $tagihan->sisa_tagihan }}">
+                                       data-sisa="{{ $tagihan->sisa_tagihan }}"
+                                       data-is-spp="{{ $isSpp ? 'true' : 'false' }}"
+                                       data-id="{{ $tagihan->id_detail }}">
                                 <span class="text-sm font-bold text-blue-800 select-none">Pilih Tagihan Ini</span>
                             </label>
 
-                            @if(\Illuminate\Support\Str::contains(strtolower($tagihan->nama_iuran), 'spp'))
+                            @if($isSpp)
                                 <div class="mt-3">
                                     <span class="text-xs font-bold text-blue-900 block mb-1">BAYAR UNTUK BEBERAPA BULAN?</span>
                                     <select name="jumlah_bulan[{{ $tagihan->id_detail }}]" class="bulan-select block w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500 py-2">
@@ -133,6 +147,47 @@
                             @else
                                 <input type="hidden" name="jumlah_bulan[{{ $tagihan->id_detail }}]" class="bulan-select" value="1">
                             @endif
+
+                            {{-- INPUT NOMINAL CICILAN FLEKSIBEL --}}
+                            <div id="wrapper-nominal-{{ $tagihan->id_detail }}" class="mt-4 border-t border-blue-100/50 pt-3 hidden">
+                                <label class="block font-bold text-[11px] text-blue-900 mb-1.5 uppercase tracking-wider">
+                                    Nominal yang akan dibayar:
+                                </label>
+                                
+                                {{-- Jika tipenya Program, input bisa diedit untuk dicicil. Jika selain itu, dikunci otomatis (readonly) --}}
+                                <input type="number" 
+                                       id="input_nominal_{{ $tagihan->id_detail }}"
+                                       name="nominal_bayar[{{ $tagihan->id_detail }}]" 
+                                       value="{{ $isProgram ? $rekomendasiCicilan : $tagihan->sisa_tagihan }}" 
+                                       max="{{ $tagihan->sisa_tagihan }}"
+                                       min="{{ $isProgram ? '1000' : $tagihan->sisa_tagihan }}"
+                                       {{ !$isProgram ? 'readonly' : '' }}
+                                       class="input-nominal-bayar w-full {{ !$isProgram ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed' : 'bg-white border-blue-200 text-slate-800' }} px-3.5 py-2.5 rounded-xl font-bold text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                       placeholder="Ketik nominal transfer...">
+                                
+                                {{-- Tombol Pembantu / Shortcuts --}}
+                                <div class="flex gap-1.5 mt-2 flex-wrap">
+                                    @if($isProgram)
+                                        {{-- Hanya tampilkan tombol pecahan cicilan jika dia Uang Program --}}
+                                        <button type="button" 
+                                                onclick="setNominalX('{{ $tagihan->id_detail }}', {{ $rekomendasiCicilan }})" 
+                                                class="bg-blue-100/70 text-blue-700 text-[10px] px-2.5 py-1.5 rounded-lg hover:bg-blue-200 transition font-bold">
+                                             Cicilan (Rp {{ number_format($rekomendasiCicilan, 0, ',', '.') }})
+                                        </button>
+                                    @endif
+                                    
+                                    <button type="button" 
+                                            onclick="setNominalX('{{ $tagihan->id_detail }}', {{ $tagihan->sisa_tagihan }})" 
+                                            class="bg-emerald-100 text-emerald-700 text-[10px] px-2.5 py-1.5 rounded-lg hover:bg-emerald-200 transition font-bold">
+                                         Lunas (Rp {{ number_format($tagihan->sisa_tagihan, 0, ',', '.') }})
+                                    </button>
+                                </div>
+                                
+                                @if(!$isProgram)
+                                    <p class="text-[10px] text-amber-600 mt-1.5 font-semibold">⚠️ Tagihan ini wajib dibayar lunas (tidak dapat dicicil).</p>
+                                @endif
+                                <p id="error_{{ $tagihan->id_detail }}" class="text-[10px] text-rose-500 mt-1 hidden font-semibold">Nominal melampaui sisa tagihan!</p>
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -158,7 +213,6 @@
                     </button>
                 </div>
 
-                {{-- Panduan Pembayaran dan Total Otomatis --}}
                 <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-6">
                     <div class="flex items-start space-x-3 mb-4">
                         <div class="bg-blue-100 text-blue-600 rounded-lg p-2 mt-0.5">
@@ -178,7 +232,7 @@
 
                     {{-- TOTAL HARUS DIBAYAR --}}
                     <div class="border-t border-blue-100 pt-4 flex justify-between items-center">
-                        <span class="text-sm font-bold text-gray-700">Total Harus Ditransfer:</span>
+                        <span class="text-sm font-bold text-gray-700">Total Pembayaran:</span>
                         <span id="total-transfer-modal" class="text-2xl font-black text-emerald-600">Rp 0</span>
                     </div>
                 </div>
@@ -208,12 +262,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalTotalText = document.getElementById('total-transfer-modal');
     const ringkasanSisaText = document.getElementById('ringkasan-total-sisa');
 
-    // Helper format mata uang Rupiah
     function formatRupiah(angka) {
         return 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(angka);
     }
 
-    // Hitung total sisa tagihan untuk bagian Ringkasan atas (Card Biru)
     function hitungRingkasanTotal() {
         let totalSisaSemua = 0;
         checkboxes.forEach(checkbox => {
@@ -224,22 +276,66 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Hitung total bayar berdasarkan tagihan yang dicentang dan dropdown bulan
+    function handleCheckboxChange(checkbox) {
+        const idDetail = checkbox.getAttribute('data-id');
+        const wrapper = document.getElementById(`wrapper-nominal-${idDetail}`);
+        const inputNominal = document.getElementById(`input_nominal_${idDetail}`);
+        
+        if (checkbox.checked) {
+            wrapper.classList.remove('hidden');
+            inputNominal.removeAttribute('disabled');
+        } else {
+            wrapper.classList.add('hidden');
+            inputNominal.setAttribute('disabled', 'true');
+        }
+        window.hitungTotalBayar();
+    }
+
+    window.setNominalX = function(id, nominal) {
+        const input = document.getElementById(`input_nominal_${id}`);
+        input.value = nominal;
+        validateNominalX(id);
+        window.hitungTotalBayar();
+    }
+
+    function validateNominalX(id) {
+        const input = document.getElementById(`input_nominal_${id}`);
+        const errorMsg = document.getElementById(`error_${id}`);
+        const maxVal = parseFloat(input.getAttribute('max'));
+        const minVal = parseFloat(input.getAttribute('min')) || 1000;
+        
+        if (parseFloat(input.value) > maxVal) {
+            input.value = maxVal;
+            errorMsg.classList.remove('hidden');
+        } else if (parseFloat(input.value) < minVal) {
+            // Jika bukan uang program (yang di-lock), jaga nilainya tetap minimal (yaitu lunas)
+            input.value = minVal;
+            errorMsg.classList.add('hidden');
+        } else {
+            errorMsg.classList.add('hidden');
+        }
+    }
+
     window.hitungTotalBayar = function() {
         let totalSemua = 0;
 
         checkboxes.forEach(checkbox => {
             if (checkbox.checked) {
                 const idDetail = checkbox.value;
-                const sisaSatuBulan = parseFloat(checkbox.getAttribute('data-sisa')) || 0;
+                const inputNominal = document.getElementById(`input_nominal_${idDetail}`);
+                const isSpp = checkbox.getAttribute('data-is-spp') === 'true';
                 
-                // Cari dropdown bulan milik tagihan ini
                 const selectBulan = document.querySelector(`select[name="jumlah_bulan[${idDetail}]"]`) || 
                                     document.querySelector(`input[name="jumlah_bulan[${idDetail}]"]`);
                 
-                const jumlahBulan = selectBulan ? parseInt(selectBulan.value) : 1;
+                const jumlahBulan = (selectBulan && isSpp) ? parseInt(selectBulan.value) : 1;
+                const nilaiInput = inputNominal ? parseFloat(inputNominal.value) : 0;
                 
-                totalSemua += (sisaSatuBulan * jumlahBulan);
+                if (isSpp) {
+                    totalSemua += (nilaiInput * jumlahBulan);
+                } else {
+                    totalSemua += nilaiInput;
+                }
             }
         });
 
@@ -249,31 +345,34 @@ document.addEventListener('DOMContentLoaded', function () {
         return totalSemua;
     }
 
-    // Event listener saat checkbox diubah atau dropdown diubah
     checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', window.hitungTotalBayar);
+        checkbox.addEventListener('change', function() {
+            handleCheckboxChange(this);
+        });
+    });
+
+    document.querySelectorAll('.input-nominal-bayar').forEach(input => {
+        input.addEventListener('input', function() {
+            const id = this.getAttribute('id').replace('input_nominal_', '');
+            validateNominalX(id);
+            window.hitungTotalBayar();
+        });
     });
 
     document.querySelectorAll('.bulan-select').forEach(select => {
         select.addEventListener('change', window.hitungTotalBayar);
     });
 
-    // Jalankan kalkulasi total sisa di card biru saat pertama kali reload halaman
     hitungRingkasanTotal();
 });
 
-// Fungsi untuk mengontrol Modal
 function bukaModalKonfirmasi() {
     const checkedBoxes = document.querySelectorAll('.tagihan-checkbox:checked');
-    
     if (checkedBoxes.length === 0) {
         alert('Silakan pilih minimal satu tagihan yang ingin dibayar!');
         return;
     }
-
-    // Hitung ulang nominal saat modal akan dibuka
     window.hitungTotalBayar();
-
     const modal = document.getElementById('modal-pembayaran');
     modal.classList.remove('hidden');
     modal.classList.add('flex');

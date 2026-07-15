@@ -41,4 +41,15 @@ class PengumumanController extends Controller
 
         return redirect('/admin/pengumuman')->with('sukses', 'Pengumuman berhasil dihapus!');
     }
+
+    // Fungsi baru untuk halaman depan (landing page)
+    public function landingPage()
+    {
+        // Mengambil data pengumuman terbaru dari database
+        $pengumuman = Pengumuman::latest()->get();
+
+        // Mengembalikan view landing page dengan membawa data pengumuman
+        return view('layouts.landing', compact('pengumuman'));
+    }
+
 }
