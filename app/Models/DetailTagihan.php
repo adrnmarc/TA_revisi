@@ -26,48 +26,35 @@ class DetailTagihan extends Model
 
     /**
      * Relasi ke Tagihan
-     * detail_tagihans.id_tagihan -> tagihans.id_tagihan
      */
     public function tagihan()
     {
-        return $this->belongsTo(
-            Tagihan::class,
-            'id_tagihan',
-            'id_tagihan'
-        );
+        return $this->belongsTo(Tagihan::class, 'id_tagihan', 'id_tagihan');
     }
 
     /**
      * Relasi ke Siswa
-     * detail_tagihans.id_siswa -> siswas.id
      */
     public function siswa()
     {
-        return $this->belongsTo(
-            Siswa::class,
-            'id_siswa',
-            'id'
-        );
+        return $this->belongsTo(Siswa::class, 'id_siswa', 'id');
     }
 
     /**
-     * Relasi ke Pembayaran
+     * Relasi ke Pembayaran (diubah jadi pembayarans agar cocok dengan withSum)
      */
-    public function pembayaran()
+    public function pembayarans()
     {
-        return $this->hasMany(
-            Pembayaran::class,
-            'id_detail',
-            'id_detail'
-        );
+        return $this->hasMany(Pembayaran::class, 'id_detail', 'id_detail');
     }
 
     /**
-     * Total pembayaran yang sudah masuk
+     * Total pembayaran yang sudah masuk (menggunakan jumlah_diterima)
      */
     public function getTotalDibayarAttribute()
     {
-        return $this->pembayaran()->sum('jumlah_bayar');
+        // Mengambil dari relasi pembayarans
+        return $this->pembayarans()->sum('jumlah_diterima');
     }
 
     /**
@@ -75,9 +62,6 @@ class DetailTagihan extends Model
      */
     public function getSisaTagihanAttribute()
     {
-        return max(
-            0,
-            $this->jumlah_bayar - $this->total_dibayar
-        );
+        return max(0, $this->jumlah_bayar - $this->total_dibayar);
     }
 }

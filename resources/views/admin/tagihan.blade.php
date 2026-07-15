@@ -169,10 +169,10 @@
                     <select name="jenis_tagihan" id="buat_jenis_tagihan" required oninvalid="this.setCustomValidity('Silakan tentukan jenis tagihan terlebih dahulu.')" oninput="this.setCustomValidity('')" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="" disabled selected data-harga="">-- Pilih Jenis Tagihan --</option>
                         <option value="Uang Sekolah / Uang Program" data-harga="1000000">Uang Sekolah (Uang Program)</option>
-                        <option value="Uang Ekskul" data-harga="100000">Uang Ekskul</option>
-                        <option value="Uang POMG" data-harga="150000">Uang POMG</option>
-                        <option value="Uang MMP" data-harga="200000">Uang MMP</option>
-                        <option value="Uang SPP / Bulan" data-harga="0">Uang SPP / Bulan</option>
+                        <option value="Uang Ekskul" data-harga="60000">Uang Ekskul</option>
+                        <option value="Uang POMG" data-harga="10000">Uang POMG</option>
+                        <option value="Uang MMP" data-harga="50000">Uang MMP</option>
+                        <option value="Uang SPP / Bulan" data-harga="150000">Uang SPP / Bulan</option>
                     </select>
                 </div>
                 <div>

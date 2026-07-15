@@ -28,6 +28,7 @@ Route::get('/ortu/dashboard', [OrtuController::class, 'dashboard']);
 Route::get('/ortu/tagihan', [OrtuController::class, 'tagihan']);
 Route::get('/ortu/bayar/{id}', [OrtuController::class, 'formBayar']);
 Route::post('/ortu/bayar/{id}', [OrtuController::class, 'prosesBayar']);
+Route::post('ortu/bayar-banyak', [OrtuController::class, 'bayarBanyak']);
 Route::get('/riwayat', [RiwayatPembayaranController::class, 'index'])->name('riwayat');
 Route::get('/ortu/pengumuman', [OrtuController::class, 'pengumuman'])->name('ortu.pengumuman');
 Route::get('/ortu/profil', [ProfilAnakController::class, 'index'])->name('ortu.profil');

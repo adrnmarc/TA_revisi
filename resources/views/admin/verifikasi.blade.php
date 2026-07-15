@@ -12,6 +12,12 @@
         </div>
     @endif
 
+    @if(session('gagal'))
+    <div class="mb-4 p-4 text-sm text-red-800 bg-red-50 rounded-xl border border-red-100 font-semibold flex items-center gap-2">
+        <span>{{ session('gagal') }}</span>
+    </div>
+    @endif
+
     <div class="flex gap-2 mb-6">
         @foreach(['menunggu' => 'Menunggu', 'disetujui' => 'Disetujui', 'ditolak' => 'Ditolak', 'semua' => 'Semua'] as $key => $label)
             <a href="{{ route('pembayaran.index', ['status' => $key]) }}" 
@@ -42,11 +48,23 @@
                             <td class="py-4 px-6 text-slate-900 font-semibold">{{ $pembayaran->siswa->nama ?? '-' }}</td>
                             <td class="py-4 px-6">{{ $pembayaran->siswa->kelas ?? '-' }}</td>
                             <td class="py-4 px-6">{{ $pembayaran->nama_iuran }}</td>
-                            <td class="py-4 px-6 text-slate-900 font-semibold">Rp {{ number_format($pembayaran->jumlah_bayar, 0, ',', '.') }}</td>
+                            <td class="py-4 px-6 text-slate-900 font-semibold">
+                                Rp {{ number_format($pembayaran->jumlah_bayar, 0, ',', '.') }}
+                                @if(str_contains(strtolower($pembayaran->nama_iuran), 'program'))
+                                    <div class="text-[10px] text-slate-400 font-normal">
+                                        Sudah dibayar: Rp {{ number_format($pembayaran->pembayarans->sum('jumlah_diterima'), 0, ',', '.') }}
+                                    </div>
+                                @endif
+                            </td>
                             
                             <td class="py-4 px-6">
-                                @if(!empty($pembayaran->bukti_bayar))
-                                    <a href="javascript:void(0)" onclick="openModal('{{ asset('storage/' . $pembayaran->bukti_bayar) }}')" class="text-blue-600 hover:underline font-bold text-xs">Lihat Bukti</a>
+                                @php
+                                    // Logika: Ambil bukti dari cicilan terbaru (pembayaran), jika tidak ada ambil dari detail_tagihan
+                                    $bukti = $pembayaran->pembayarans->last()->bukti_bayar ?? $pembayaran->bukti_bayar;
+                                @endphp
+
+                                @if(!empty($bukti))
+                                    <a href="javascript:void(0)" onclick="openModal('{{ asset('storage/' . $bukti) }}')" class="text-blue-600 hover:underline font-bold text-xs">Lihat Bukti</a>
                                 @else
                                     <span class="text-slate-400 text-xs italic">Belum ada</span>
                                 @endif
@@ -57,23 +75,42 @@
                             </td>
                             
                             <td class="py-4 px-6 text-center">
-                                @if($pembayaran->status_tagihan == 'Menunggu Verifikasi' && !empty($pembayaran->bukti_bayar))
-                                    <div class="flex justify-center gap-1">
-                                        <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-[10px] font-bold">LUNAS</button>
-                                        </form>
-                                        <button type="button" onclick="document.getElementById('modal-tolak-{{ $pembayaran->id_detail }}').classList.remove('hidden')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-[10px] font-bold">TOLAK</button>
-                                    </div>
-                                @elseif($pembayaran->status_tagihan == 'Lunas')
-                                    <span class="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-2 py-1 rounded">SUDAH LUNAS</span>
+                            @if($pembayaran->status_tagihan != 'Lunas' && (!empty($pembayaran->bukti_bayar) || $pembayaran->pembayarans->count() > 0))
+                                
+                                @if(str_contains(strtolower($pembayaran->nama_iuran), 'program'))
+                                    <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST" class="flex flex-col gap-1">
+                                        @csrf
+                                        <input type="number" name="jumlah_diterima" class="w-24 border rounded p-1 text-[10px]" placeholder="Nominal" required>
+                                        <button type="submit" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">CICIL</button>
+                                    </form>
                                 @else
-                                    <span class="text-slate-300 text-[10px] italic">Menunggu upload...</span>
+                                    <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST">
+                                        @csrf
+                                        
+                                        @php
+                                            // Sistem menghitung otomatis sisa yang harus dilunasi agar tidak error
+                                            $sudahBayar = $pembayaran->pembayarans->sum('jumlah_diterima');
+                                            $sisaTagihan = $pembayaran->jumlah_bayar - $sudahBayar;
+                                        @endphp
+                                        
+                                        {{-- Mengirimkan angka sisa tagihan secara sembunyi-sembunyi --}}
+                                        <input type="hidden" name="jumlah_diterima" value="{{ $sisaTagihan }}">
+                                        
+                                        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded text-[10px] font-bold hover:bg-blue-700 transition">LUNAS</button>
+                                    </form>
                                 @endif
+                                
+                                <button type="button" onclick="document.getElementById('modal-tolak-{{ $pembayaran->id_detail }}').classList.remove('hidden')" 
+                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-[10px] font-bold mt-1">TOLAK</button>
+
+                            @elseif($pembayaran->status_tagihan == 'Lunas')
+                                <span class="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-2 py-1 rounded">SUDAH LUNAS</span>
+                            @else
+                                <span class="text-slate-300 text-[10px] italic">Menunggu upload...</span>
+                            @endif
                             </td>
                         </tr>
 
-                        @if(!empty($pembayaran->bukti_bayar))
                         <div id="modal-tolak-{{ $pembayaran->id_detail }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                             <div class="bg-white p-6 rounded-2xl w-80 shadow-2xl">
                                 <h3 class="font-bold text-slate-800 mb-4">Alasan Penolakan</h3>
@@ -87,7 +124,6 @@
                                 </form>
                             </div>
                         </div>
-                        @endif
                     @empty
                         <tr><td colspan="7" class="py-10 text-center text-slate-400">Tidak ada data tagihan.</td></tr>
                     @endforelse

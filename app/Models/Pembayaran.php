@@ -14,10 +14,12 @@ class Pembayaran extends Model
     protected $primaryKey = 'id_pembayaran';
 
     protected $fillable = [
-        'id_detail',
-        'user_id',
-        'tanggal_bayar',
-        'jumlah_diterima',
+    'id_detail',
+    'user_id',
+    'tanggal_bayar',
+    'jumlah_diterima',
+    'status', 
+    'bukti_bayar',
     ];
 
     /**

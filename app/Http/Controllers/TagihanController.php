@@ -43,20 +43,28 @@ class TagihanController extends Controller
 
         $siswa = Siswa::where('nis', $request->siswa_id)->firstOrFail();
 
-        // simpan tabel tagihans
+        // 1. LOGIKA NAMA BULAN OTOMATIS
+        $namaTagihan = $request->jenis_tagihan;
+        if (str_contains(strtolower($namaTagihan), 'spp')) {
+            // Ubah format tanggal menjadi nama bulan dan tahun (Contoh: Juli 2026)
+            $bulanTahun = \Carbon\Carbon::parse($request->tanggal_tagihan)->translatedFormat('F Y');
+            $namaTagihan = $namaTagihan . ' - ' . $bulanTahun;
+        }
+
+        // 2. Simpan tabel tagihans
         $tagihan = Tagihan::create([
             'nis' => $siswa->nis,
-            'nama_tagihan' => $request->jenis_tagihan,
-            'jatuh_tempo' => $request->tanggal_tagihan,
+            'nama_tagihan' => $namaTagihan, // Pakai nama yang sudah diolah
+            'jatuh_tempo' => $request->tanggal_tagihan, // Ini sudah benar masuk ke DB
         ]);
 
-        // simpan detail tagihan
+        // 3. Simpan detail tagihan
         DetailTagihan::create([
             'id_tagihan' => $tagihan->id_tagihan,
             'id_siswa' => $siswa->id,
-            'nama_iuran' => $request->jenis_tagihan,
+            'nama_iuran' => $namaTagihan, // Pakai nama yang sudah diolah
             'jumlah_bayar' => $request->nominal,
-            'status_tagihan' => 'Belum Lunas',
+            'status_tagihan' => 'Belum Bayar', // Ubah ke 'Belum Bayar' agar seragam dengan sistem sebelumnya
         ]);
 
         return redirect()

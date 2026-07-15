@@ -11,14 +11,17 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
-    <div class="flex min-h-screen">
-        <aside class="w-64 flex-shrink-0 bg-white border-r border-slate-200 p-6 flex flex-col shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
-            <div class="mb-10 px-2">
-                <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">TK Mutiara</h1>
-                <span class="text-xs font-medium text-emerald-600 uppercase tracking-widest">Portal Orang Tua</span>
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-64 flex-shrink-0 bg-white border-r border-slate-100 flex flex-col">
+            <div class="p-8">
+                <h1 class="text-2xl font-extrabold text-emerald-600 tracking-tight">TK Mutiara</h1>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portal Orang Tua</span>
             </div>
             
-            <nav class="space-y-1.5 flex-grow">
+            <nav class="flex-grow px-4 space-y-1">
                 @php
                     $menu = [
                         ['url' => '/ortu/dashboard', 'label' => 'Dashboard', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
@@ -31,19 +34,17 @@
 
                 @foreach($menu as $item)
                     @php $isActive = request()->fullUrlIs(url($item['url']) . '*'); @endphp
-                    <a href="{{ $item['url'] }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group {{ $isActive ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'text-slate-600 hover:bg-slate-100' }}">
-                        <svg class="w-5 h-5 {{ $isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}" />
-                        </svg>
-                        <span class="font-medium">{{ $item['label'] }}</span>
+                    <a href="{{ $item['url'] }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 {{ $isActive ? 'bg-emerald-50 text-emerald-600 font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700' }}">
+                        <svg class="w-5 h-5 {{ $isActive ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}" /></svg>
+                        <span>{{ $item['label'] }}</span>
                     </a>
                 @endforeach
             </nav>
-
-            <div class="pt-6 border-t border-slate-100">
+            
+            <div class="p-6 border-t border-slate-100">
                 <form action="/logout" method="POST">
                     @csrf
-                    <button class="flex items-center gap-3 w-full px-4 py-3 text-slate-500 font-medium hover:bg-red-50 hover:text-red-600 rounded-xl transition">
+                    <button class="flex items-center gap-3 w-full px-4 py-3 text-slate-400 font-medium hover:text-rose-500 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                         Logout
                     </button>
@@ -51,13 +52,18 @@
             </div>
         </aside>
 
-        <main class="flex-1 overflow-y-auto">
-            <header class="bg-white border-b border-slate-200 py-6 px-10">
-                <h2 class="text-2xl font-bold text-slate-800">@yield('header')</h2>
-                <p class="text-slate-500 text-sm mt-0.5">Sistem Informasi Pembayaran Keuangan Sekolah</p>
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden">
+            <!-- Header yang tetap di atas -->
+            <header class="bg-white border-b border-slate-100 py-6 px-10 flex justify-between items-center z-10">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">@yield('header')</h2>
+                    <p class="text-slate-400 text-sm">Selamat datang di Portal Orang Tua</p>
+                </div>
             </header>
             
-            <div class="p-10">
+            <!-- Konten yang bisa di-scroll secara mandiri -->
+            <div class="flex-1 overflow-y-auto p-10 bg-slate-50">
                 <div class="max-w-7xl mx-auto">
                     @yield('content')
                 </div>
