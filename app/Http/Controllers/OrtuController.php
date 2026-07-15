@@ -12,41 +12,52 @@ use Carbon\Carbon;
 
 class OrtuController extends Controller
 {
-   public function dashboard()
-{
-    $siswa_id = session('siswa_id');
-    $siswa = Siswa::find($siswa_id);
+    /**
+     * Menampilkan Dashboard Orang Tua
+     */
+    public function dashboard()
+    {
+        $siswa_id = session('siswa_id');
+        $siswa = Siswa::find($siswa_id);
 
-    // 1. Ambil semua tagihan siswa
-    $semuaTagihan = DetailTagihan::where('id_siswa', $siswa_id)->get();
-
-    // 2. Hitung total yang sudah dibayar (Logika sama dengan Riwayat)
-    $totalBayar = 0;
-    foreach ($semuaTagihan as $tagihan) {
-        if ($tagihan->status_tagihan == 'Lunas') {
-            $totalBayar += $tagihan->jumlah_bayar;
-        } else {
-            // Hitung cicilan dari relasi pembayaran
-            $totalBayar += $tagihan->pembayarans()
-                ->whereIn('status', ['Diterima', 'Lunas', 'Menunggu', 'Verifikasi'])
-                ->sum('jumlah_diterima');
+        // Jika session habis, kembalikan ke halaman login
+        if (!$siswa) {
+            return redirect('/login-ortu')->with('gagal', 'Sesi Anda telah berakhir, silakan login kembali.');
         }
+
+        // 1. Ambil semua tagihan siswa
+        $semuaTagihan = DetailTagihan::where('id_siswa', $siswa_id)->get();
+
+        // 2. Hitung total yang sudah dibayar (Logika sama dengan Riwayat)
+        $totalBayar = 0;
+        foreach ($semuaTagihan as $tagihan) {
+            if ($tagihan->status_tagihan == 'Lunas') {
+                $totalBayar += $tagihan->jumlah_bayar;
+            } else {
+                // Hitung cicilan dari relasi pembayaran
+                $totalBayar += $tagihan->pembayarans()
+                    ->whereIn('status', ['Diterima', 'Lunas', 'Menunggu', 'Verifikasi'])
+                    ->sum('jumlah_diterima');
+            }
+        }
+
+        // 3. Jumlah transaksi (Menghitung record di tabel Pembayaran milik siswa ini)
+        $jumlahTransaksi = Pembayaran::whereHas('detailTagihan', function($query) use ($siswa_id) {
+            $query->where('id_siswa', $siswa_id);
+        })
+        ->whereIn('status', ['Diterima', 'Lunas', 'Menunggu', 'Verifikasi'])
+        ->count();
+
+        $riwayat = DetailTagihan::where('id_siswa', $siswa_id)->latest()->get();
+        $pengumuman = \App\Models\Pengumuman::latest()->take(3)->get();
+
+        return view('ortu.dashboard', compact('totalBayar', 'jumlahTransaksi', 'riwayat', 'siswa', 'pengumuman'));
     }
 
-    // 3. Jumlah transaksi (Menghitung record di tabel Pembayaran milik siswa ini)
-    // Kita pakai whereHas untuk mencari pembayaran berdasarkan id_siswa di detail_tagihan
-    $jumlahTransaksi = \App\Models\Pembayaran::whereHas('detailTagihan', function($query) use ($siswa_id) {
-        $query->where('id_siswa', $siswa_id);
-    })
-    ->whereIn('status', ['Diterima', 'Lunas', 'Menunggu', 'Verifikasi'])
-    ->count();
-
-    $riwayat = DetailTagihan::where('id_siswa', $siswa_id)->latest()->get();
-    $pengumuman = \App\Models\Pengumuman::latest()->take(3)->get();
-
-    return view('ortu.dashboard', compact('totalBayar', 'jumlahTransaksi', 'riwayat', 'siswa', 'pengumuman'));
-}
-   public function tagihan()
+    /**
+     * Menampilkan Daftar Tagihan Orang Tua
+     */
+    public function tagihan()
     {
         $siswaId = session('siswa_id');
         
@@ -59,7 +70,7 @@ class OrtuController extends Controller
             // LOGIKA KOREKSI OTOMATIS:
             // Jika nama iuran mengandung kata 'spp' DAN tanggalnya BUKAN tanggal 5
             if (str_contains(strtolower($tagihan->nama_iuran), 'spp')) {
-                $tanggalJatuhTempo = \Carbon\Carbon::parse($tagihan->tagihan->jatuh_tempo);
+                $tanggalJatuhTempo = Carbon::parse($tagihan->tagihan->jatuh_tempo);
                 
                 if ($tanggalJatuhTempo->day !== 5) {
                     $tanggalBaru = $tanggalJatuhTempo->day(5)->format('Y-m-d');
@@ -76,6 +87,10 @@ class OrtuController extends Controller
 
         return view('ortu.tagihan', compact('tagihans'));
     }
+
+    /**
+     * Memproses Unggah Pembayaran (Bayar Banyak / Tunggal)
+     */
     public function bayarBanyak(Request $request)
     {
         $request->validate([
@@ -85,19 +100,34 @@ class OrtuController extends Controller
             'tagihan_id.required' => 'Pilih minimal satu tagihan yang ingin dibayar!',
         ]);
 
+        // Ambil ID siswa dari session kustom login orang tua Anda
+        $siswaId = session('siswa_id');
+
+        // Pengaman jika session login tiba-tiba habis saat mengirim form
+        if (!$siswaId) {
+            return redirect('/login-ortu')->with('gagal', 'Sesi Anda telah berakhir, silakan login kembali.');
+        }
+
+        // Simpan file bukti pembayaran ke storage public
         $pathBukti = $request->file('bukti_bayar')->store('bukti_bayar', 'public');
 
         foreach ($request->tagihan_id as $id) {
             $detail = DetailTagihan::with('tagihan')->find($id);
             
             if ($detail) {
+                // Perhitungan sisa tagihan agar nominal yang masuk ke 'jumlah_diterima' akurat
+                $totalTerbayar = Pembayaran::where('id_detail', $detail->id_detail)
+                    ->whereIn('status', ['Diterima', 'Lunas'])
+                    ->sum('jumlah_diterima');
+                $sisaBayar = $detail->jumlah_bayar - $totalTerbayar;
+
                 // 1. REKAM HISTORI DI TABEL PEMBAYARAN (Sesuai LRS)
-                \App\Models\Pembayaran::create([
+                Pembayaran::create([
                     'id_detail'       => $detail->id_detail,
-                    'user_id'         => Auth::id(),
+                    'user_id'         => 1, // Menggunakan ID Admin/Sistem (1) untuk menghindari error Foreign Key 1452
                     'tanggal_bayar'   => now(),
-                    'jumlah_diterima' => $detail->sisa_tagihan, // Mengambil sisa yang harus dibayar
-                    'bukti_bayar'     => $pathBukti,            // Foto tersimpan di sini
+                    'jumlah_diterima' => $sisaBayar, 
+                    'bukti_bayar'     => $pathBukti,            
                     'status'          => 'Menunggu Verifikasi',
                     'keterangan'      => 'Pembayaran via Portal Ortu'
                 ]);
@@ -112,7 +142,7 @@ class OrtuController extends Controller
 
                 $detail->update([
                     'status_tagihan' => 'Menunggu Verifikasi',
-                    'bukti_bayar'    => $pathBukti // Masih disimpan di sini untuk mempermudah Admin melihat di tabel verifikasi
+                    'bukti_bayar'    => $pathBukti // Disimpan sementara agar Admin dapat melihat fotonya di halaman verifikasi
                 ]);
 
                 // 3. LOGIKA BAYAR DI MUKA (KLONING TAGIHAN)
@@ -125,19 +155,19 @@ class OrtuController extends Controller
                         $namaIuranBaru = 'Uang SPP / Bulan - ' . $namaBulanBaru;
 
                         $tagihanBaru = Tagihan::create([
-                            'nis' => $detail->tagihan->nis,
+                            'nis'          => $detail->tagihan->nis,
                             'nama_tagihan' => $namaIuranBaru,
-                            'jatuh_tempo' => $tanggalBaru->format('Y-m-d'),
+                            'jatuh_tempo'  => $tanggalBaru->format('Y-m-d'),
                         ]);
 
                         DetailTagihan::create([
-                            'id_tagihan' => $tagihanBaru->id_tagihan,
-                            'id_siswa' => $detail->id_siswa,
-                            'nama_iuran' => $namaIuranBaru,
-                            'jumlah_bayar' => $detail->jumlah_bayar,
-                            'sisa_tagihan' => $detail->jumlah_bayar,
+                            'id_tagihan'     => $tagihanBaru->id_tagihan,
+                            'id_siswa'       => $detail->id_siswa,
+                            'nama_iuran'     => $namaIuranBaru,
+                            'jumlah_bayar'   => $detail->jumlah_bayar,
+                            'sisa_tagihan'   => $detail->jumlah_bayar,
                             'status_tagihan' => 'Menunggu Verifikasi',
-                            'bukti_bayar' => $pathBukti 
+                            'bukti_bayar'    => $pathBukti 
                         ]);
                     }
                 }
@@ -147,6 +177,9 @@ class OrtuController extends Controller
         return back()->with('sukses', 'Bukti pembayaran berhasil dikirim!');
     }
 
+    /**
+     * Menampilkan Daftar Pengumuman
+     */
     public function pengumuman()
     {
         $pengumuman = \App\Models\Pengumuman::latest()->get();

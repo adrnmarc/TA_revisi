@@ -1,211 +1,288 @@
 @extends('layouts.ortu')
+
 @section('header', 'Tagihan')
 
 @section('content')
 <div class="pt-8 px-8 max-w-7xl mx-auto pb-12">
-    
-    {{-- Card Ringkasan --}}
+
+    {{-- Card Ringkasan Sisa Tagihan --}}
     <div class="bg-blue-600 rounded-3xl p-8 text-white mb-10 shadow-xl flex justify-between items-center">
         <div>
             <p class="text-blue-100 text-sm font-medium">Total Sisa Tagihan Aktif</p>
-            <h1 class="text-4xl font-bold mt-1">
-                Rp {{ number_format($tagihans->sum('sisa_tagihan'), 0, ',', '.') }}
-            </h1>
-            <p class="text-blue-100 text-xs mt-2">Segera lakukan pembayaran untuk melunasi sisa tagihan.</p>
+            <h1 class="text-4xl font-bold mt-1" id="ringkasan-total-sisa">Rp 0</h1>
+            <p class="text-xs text-blue-200 mt-2">Segera lakukan pembayaran untuk melunasi sisa tagihan.</p>
         </div>
-        <div class="bg-blue-500 p-4 rounded-2xl">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+        <div class="text-white opacity-80">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
         </div>
     </div>
 
+    {{-- Notifikasi Sukses --}}
     @if(session('sukses'))
-        <div class="mb-6 p-4 text-sm text-emerald-800 bg-emerald-50 rounded-xl border border-emerald-100 font-semibold">
-            {{ session('sukses') }}
-        </div>
-    @endif
-    @if(session('gagal'))
-        <div class="mb-6 p-4 text-sm text-rose-800 bg-rose-50 rounded-xl border border-rose-100 font-semibold">
-            {{ session('gagal') }}
+        <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 mb-6 rounded-r-xl shadow-sm">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-emerald-800">{{ session('sukses') }}</p>
+                </div>
+            </div>
         </div>
     @endif
 
-    @php
-        $tagihanAktif = $tagihans->whereNotIn('status_tagihan', ['Lunas']);
-        $tagihanLunas = $tagihans->where('status_tagihan', 'Lunas');
-    @endphp
+    {{-- Notifikasi Error / Gagal --}}
+    @if(session('error'))
+        <div class="bg-rose-50 border-l-4 border-rose-500 p-4 mb-6 rounded-r-xl shadow-sm">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-rose-800">{{ session('error') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
 
-    <h2 class="text-xl font-bold text-slate-800 mb-4">Tagihan Aktif</h2>
-    
-    @if($tagihanAktif->count() > 0)
-        <form action="{{ url('ortu/bayar-banyak') }}" method="POST" enctype="multipart/form-data" id="formPembayaran">
-            @csrf
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                @foreach($tagihanAktif as $tagihan)
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden">
-                        
-                        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                        
-                        <div>
-                            <div class="flex justify-between items-start mb-4">
-                                <h3 class="font-bold text-slate-800">{{ $tagihan->nama_iuran }}</h3>
-                                @if($tagihan->status_tagihan == 'Menunggu Verifikasi')
-                                    <span class="px-2 py-1 rounded-lg text-[9px] font-bold bg-amber-100 text-amber-700 uppercase">Menunggu</span>
-                                @else
-                                    <span class="px-2 py-1 rounded-lg text-[9px] font-bold bg-rose-100 text-rose-700 uppercase">
-                                        {{ $tagihan->total_dibayar > 0 ? 'Mencicil' : 'Belum Bayar' }}
-                                    </span>
-                                @endif
+    {{-- Notifikasi Validasi Input Gagal --}}
+    @if($errors->any())
+        <div class="bg-rose-50 border-l-4 border-rose-500 p-4 mb-6 rounded-r-xl shadow-sm">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-bold text-rose-800">Mohon periksa kembali form pembayaran Anda:</p>
+                    <ul class="list-disc pl-5 mt-1 text-xs text-rose-700 space-y-1 font-semibold">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Form Utama Pembayaran --}}
+    <form id="form-pembayaran" action="{{ url('ortu/bayar-banyak') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        
+        <h3 class="text-xl font-bold text-gray-800 mb-6">Tagihan Aktif</h3>
+
+        @if($tagihans->isEmpty())
+            <div class="bg-gray-50 rounded-2xl p-8 text-center border border-gray-100">
+                <p class="text-gray-500">Tidak ada tagihan aktif yang perlu dibayar.</p>
+            </div>
+        @else
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                @foreach ($tagihans as $tagihan)
+                    <div class="bg-white rounded-2xl border-2 border-gray-100 p-6 shadow-sm hover:shadow-md transition duration-300 relative">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-lg leading-tight">{{ $tagihan->nama_iuran }}</h4>
+                                <span class="text-xs font-semibold text-red-500 mt-1 block">
+                                    Jatuh Tempo: {{ $tagihan->tagihan ? \Carbon\Carbon::parse($tagihan->tagihan->jatuh_tempo)->translatedFormat('d M Y') : '-' }}
+                                </span>
                             </div>
-
-                            {{-- LOGIKA BARU UNTUK CICILAN --}}
-                            <p class="text-[10px] font-semibold mb-2 {{ str_contains(strtolower($tagihan->nama_iuran), 'program') ? 'text-blue-600' : 'text-rose-500' }}">
-                                @if(str_contains(strtolower($tagihan->nama_iuran), 'program'))
-                                    Keterangan: Cicilan (Maks 3x)
-                                @else
-                                    Jatuh Tempo: {{ $tagihan->tagihan ? \Carbon\Carbon::parse($tagihan->tagihan->jatuh_tempo)->format('d M Y') : '-' }}
-                                @endif
-                            </p>
-
-                            @if(str_contains(strtolower($tagihan->nama_iuran), 'program'))
-                                @php
-                                    $jmlCicilan = $tagihan->pembayarans->where('status', 'Diterima')->count();
-                                @endphp
-                                <div class="mb-4 text-[10px] font-bold {{ $jmlCicilan >= 3 ? 'text-rose-600' : 'text-blue-600' }}">
-                                    Cicilan: {{ $jmlCicilan }} dari 3 kali
-                                </div>
-                            @endif
-                            
-                            <p class="text-xs text-slate-400 mb-1">
-                                {{ $tagihan->total_dibayar > 0 ? 'Sisa Tagihan' : 'Total Tagihan' }}
-                            </p>
-                            <p class="text-lg font-bold text-slate-900 mb-2">
-                                Rp {{ number_format($tagihan->sisa_tagihan, 0, ',', '.') }}
-                            </p>
-                            
-                            @if($tagihan->total_dibayar > 0)
-                                <p class="text-[10px] text-emerald-600 mb-4 italic">
-                                    Sudah dibayar: Rp {{ number_format($tagihan->total_dibayar, 0, ',', '.') }}
-                                </p>
+                            @if($tagihan->status_tagihan == 'Belum Lunas')
+                                <span class="bg-red-50 text-red-600 text-xs px-2.5 py-1 rounded-full font-bold">BELUM LUNAS</span>
+                            @elseif($tagihan->status_tagihan == 'Menyicil' || $tagihan->status_tagihan == 'Mencicil')
+                                <span class="bg-amber-50 text-amber-600 text-xs px-2.5 py-1 rounded-full font-bold">MENCICIL</span>
+                            @else
+                                <span class="bg-blue-50 text-blue-600 text-xs px-2.5 py-1 rounded-full font-bold">{{ $tagihan->status_tagihan }}</span>
                             @endif
                         </div>
 
-                        @if($tagihan->status_tagihan != 'Menunggu Verifikasi')
-                            <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                                <label class="flex items-center justify-center gap-2 w-full text-center text-blue-700 text-sm font-semibold cursor-pointer">
-                                    <input type="checkbox" name="tagihan_id[]" value="{{ $tagihan->id_detail }}" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 checkbox-tagihan">
-                                    Pilih Tagihan Ini
-                                </label>
+                        <div class="border-t border-gray-50 pt-4 mt-4">
+                            <p class="text-xs text-gray-400">Sisa Tagihan</p>
+                            <h5 class="text-2xl font-black text-gray-800 mt-1">Rp {{ number_format($tagihan->sisa_tagihan, 0, ',', '.') }}</h5>
+                            @if(isset($tagihan->pembayarans_sum_jumlah_diterima) && $tagihan->pembayarans_sum_jumlah_diterima > 0)
+                                <p class="text-xs text-emerald-600 mt-1 font-medium">Sudah dibayar: Rp {{ number_format($tagihan->pembayarans_sum_jumlah_diterima, 0, ',', '.') }}</p>
+                            @endif
+                        </div>
 
-                                @if(str_contains(strtolower($tagihan->nama_iuran), 'spp'))
-                                    <div class="mt-3 pt-3 border-t border-blue-200">
-                                        <label class="text-[10px] text-blue-800 font-bold uppercase mb-1 block">Bayar Untuk Berapa Bulan?</label>
-                                        <select name="jumlah_bulan[{{ $tagihan->id_detail }}]" class="w-full text-sm border-blue-300 rounded-lg text-slate-700 focus:ring-blue-500">
-                                            <option value="1">1 Bulan (Bulan ini saja)</option>
-                                            <option value="2">2 Bulan</option>
-                                            <option value="3">3 Bulan</option>
-                                            <option value="6">6 Bulan</option>
-                                            <option value="12">1 Tahun Lunas</option>
-                                        </select>
-                                        <p class="text-[9px] text-blue-600 mt-1 italic">*Sistem otomatis membuat tagihan bulan berikutnya.</p>
-                                    </div>
-                                @endif
-                            </div>
-                        @else
-                            <button disabled class="mt-4 block w-full text-center bg-slate-100 text-slate-400 py-2.5 rounded-xl text-sm font-semibold cursor-not-allowed border border-transparent">
-                                Sedang Diproses
-                            </button>
-                        @endif
+                        {{-- Panel Pilihan Pembayaran di Setiap Card --}}
+                        <div class="bg-blue-50/50 rounded-xl p-4 mt-6 border border-blue-100/50">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" name="tagihan_id[]" value="{{ $tagihan->id_detail }}" 
+                                       class="tagihan-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5" 
+                                       data-sisa="{{ $tagihan->sisa_tagihan }}">
+                                <span class="text-sm font-bold text-blue-800 select-none">Pilih Tagihan Ini</span>
+                            </label>
+
+                            @if(\Illuminate\Support\Str::contains(strtolower($tagihan->nama_iuran), 'spp'))
+                                <div class="mt-3">
+                                    <span class="text-xs font-bold text-blue-900 block mb-1">BAYAR UNTUK BEBERAPA BULAN?</span>
+                                    <select name="jumlah_bulan[{{ $tagihan->id_detail }}]" class="bulan-select block w-full rounded-lg border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500 py-2">
+                                        <option value="1">1 Bulan (Bulan ini saja)</option>
+                                        <option value="2">2 Bulan</option>
+                                        <option value="3">3 Bulan</option>
+                                        <option value="6">6 Bulan</option>
+                                        <option value="12">1 Tahun Lunas</option>
+                                    </select>
+                                </div>
+                            @else
+                                <input type="hidden" name="jumlah_bulan[{{ $tagihan->id_detail }}]" class="bulan-select" value="1">
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             </div>
 
-            @if($tagihanAktif->where('status_tagihan', '!=', 'Menunggu Verifikasi')->count() > 0)
-                <div class="flex justify-end mb-12">
-                    <button type="button" onclick="bukaModalBayar()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg flex items-center gap-2">
-                        <span>Lanjutkan Pembayaran</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            <div class="flex justify-end mt-8">
+                <button type="button" onclick="bukaModalKonfirmasi()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition duration-200 inline-flex items-center space-x-2">
+                    <span>Lanjutkan Pembayaran</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </button>
+            </div>
+        @endif
+
+        {{-- MODAL KONFIRMASI PEMBAYARAN --}}
+        <div id="modal-pembayaran" class="hidden fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl p-8 relative transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Konfirmasi Pembayaran</h3>
+                    <button type="button" onclick="tutupModalKonfirmasi()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-            @endif
 
-            {{-- MODAL POPUP (Sama seperti sebelumnya) --}}
-            <div id="modalBayar" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 px-4 backdrop-blur-sm transition-opacity">
-                <div class="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl transform scale-100 transition-transform">
-                    <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
-                        <h3 class="font-bold text-slate-800 text-lg">Konfirmasi Pembayaran</h3>
-                        <button type="button" onclick="tutupModalBayar()" class="text-slate-400 hover:text-rose-500 transition-colors bg-slate-100 hover:bg-rose-50 p-2 rounded-full">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
-                    </div>
-                    <div class="p-6">
-                        <div class="bg-blue-50 border-l-4 border-blue-600 p-5 rounded-r-2xl mb-6">
-                            <div class="flex gap-3 items-start">
-                                <svg class="w-6 h-6 text-blue-700 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <div>
-                                    <h4 class="font-bold text-blue-900 text-sm mb-1">Panduan Transfer</h4>
-                                    <p class="text-xs text-blue-700 mb-3">Transfer sejumlah total tagihan yang Anda pilih ke:</p>
-                                    <div class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm inline-block w-full">
-                                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Bank BCA</p>
-                                        <p class="text-2xl font-black text-blue-700 tracking-wider mb-1">123 4567 890</p>
-                                        <p class="text-xs font-semibold text-slate-600">a.n. TK Mutiara Bogor</p>
-                                    </div>
-                                </div>
-                            </div>
+                {{-- Panduan Pembayaran dan Total Otomatis --}}
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-6">
+                    <div class="flex items-start space-x-3 mb-4">
+                        <div class="bg-blue-100 text-blue-600 rounded-lg p-2 mt-0.5">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-2">Upload Bukti Transfer <span class="text-rose-500">*</span></label>
-                            <input type="file" name="bukti_bayar" id="inputBukti" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-200 rounded-xl cursor-pointer">
-                            <p class="text-[10px] text-slate-500 mt-2">*Format gambar (JPG, PNG). Maksimal 5MB.</p>
+                            <p class="text-sm font-bold text-blue-800">Panduan Transfer</p>
+                            <p class="text-xs text-blue-600">Silakan lakukan transfer ke rekening berikut:</p>
                         </div>
                     </div>
-                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                        <button type="button" onclick="tutupModalBayar()" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition text-sm">Batal</button>
-                        <button type="button" onclick="submitForm()" class="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition text-sm shadow-md">Kirim Pembayaran</button>
+                    
+                    <div class="bg-white p-4 rounded-xl border border-blue-100 mb-4 shadow-sm">
+                        <span class="text-xs font-bold text-gray-400 tracking-wider">BANK BCA</span>
+                        <h4 class="text-2xl font-black text-blue-700 tracking-wide mt-1">123 4567 890</h4>
+                        <span class="text-xs font-semibold text-gray-600 block mt-1">a.n. TK Mutiara Bogor</span>
                     </div>
-                </div>
-            </div>
-        </form>
-    @else
-        <div class="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-100 mb-12 shadow-sm">
-            Hore! Tidak ada tagihan aktif saat ini.
-        </div>
-    @endif
 
-    {{-- Riwayat Lunas (Sama seperti sebelumnya) --}}
-    <h2 class="text-xl font-bold text-slate-800 mb-4 pt-4 border-t border-slate-200">Riwayat Tagihan Lunas</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @forelse($tagihanLunas as $tagihan)
-            <div class="bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between opacity-75">
-                <div>
-                    <div class="flex justify-between items-start mb-4">
-                        <h3 class="font-bold text-slate-600">{{ $tagihan->nama_iuran }}</h3>
-                        <span class="px-2 py-1 rounded-lg text-[9px] font-bold bg-emerald-100 text-emerald-700 uppercase">Lunas</span>
+                    {{-- TOTAL HARUS DIBAYAR --}}
+                    <div class="border-t border-blue-100 pt-4 flex justify-between items-center">
+                        <span class="text-sm font-bold text-gray-700">Total Harus Ditransfer:</span>
+                        <span id="total-transfer-modal" class="text-2xl font-black text-emerald-600">Rp 0</span>
                     </div>
-                    <p class="text-[10px] text-slate-400 font-semibold mb-2">
-                        Jatuh Tempo: {{ \Carbon\Carbon::parse($tagihan->tagihan->jatuh_tempo)->format('d M Y') }}
-                    </p>
-                    <p class="text-xs text-slate-400 mb-1">Total Dibayar</p>
-                    <p class="text-lg font-bold text-slate-600 mb-2">Rp {{ number_format($tagihan->jumlah_bayar, 0, ',', '.') }}</p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Upload Bukti Transfer <span class="text-red-500">*</span></label>
+                    <input type="file" name="bukti_bayar" required class="block w-full border border-gray-200 rounded-xl text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 file:bg-gray-50 file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold file:px-4 file:py-3 file:mr-4 file:cursor-pointer">
+                    <p class="text-[10px] text-gray-400 mt-2">* Format gambar wajib JPG, JPEG, atau PNG. Maksimal ukuran file 5 MB.</p>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button type="button" onclick="tutupModalKonfirmasi()" class="w-1/2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition duration-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-200">
+                        Kirim Pembayaran
+                    </button>
                 </div>
             </div>
-        @empty
-            <div class="col-span-full p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-100">Belum ada tagihan yang lunas.</div>
-        @endforelse
-    </div>
+        </div>
+    </form>
 </div>
 
 <script>
-    function bukaModalBayar() {
-        const checkboxes = document.querySelectorAll('.checkbox-tagihan:checked');
-        if (checkboxes.length === 0) { alert('Mohon pilih tagihan dulu!'); return; }
-        document.getElementById('modalBayar').classList.remove('hidden');
+document.addEventListener('DOMContentLoaded', function () {
+    const checkboxes = document.querySelectorAll('.tagihan-checkbox');
+    const modalTotalText = document.getElementById('total-transfer-modal');
+    const ringkasanSisaText = document.getElementById('ringkasan-total-sisa');
+
+    // Helper format mata uang Rupiah
+    function formatRupiah(angka) {
+        return 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(angka);
     }
-    function tutupModalBayar() { document.getElementById('modalBayar').classList.add('hidden'); }
-    function submitForm() {
-        const inputFile = document.getElementById('inputBukti');
-        if (inputFile.files.length === 0) { alert('Upload bukti transfer dulu!'); return; }
-        document.getElementById('formPembayaran').submit();
+
+    // Hitung total sisa tagihan untuk bagian Ringkasan atas (Card Biru)
+    function hitungRingkasanTotal() {
+        let totalSisaSemua = 0;
+        checkboxes.forEach(checkbox => {
+            totalSisaSemua += parseFloat(checkbox.getAttribute('data-sisa')) || 0;
+        });
+        if (ringkasanSisaText) {
+            ringkasanSisaText.textContent = formatRupiah(totalSisaSemua);
+        }
     }
+
+    // Hitung total bayar berdasarkan tagihan yang dicentang dan dropdown bulan
+    window.hitungTotalBayar = function() {
+        let totalSemua = 0;
+
+        checkboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const idDetail = checkbox.value;
+                const sisaSatuBulan = parseFloat(checkbox.getAttribute('data-sisa')) || 0;
+                
+                // Cari dropdown bulan milik tagihan ini
+                const selectBulan = document.querySelector(`select[name="jumlah_bulan[${idDetail}]"]`) || 
+                                    document.querySelector(`input[name="jumlah_bulan[${idDetail}]"]`);
+                
+                const jumlahBulan = selectBulan ? parseInt(selectBulan.value) : 1;
+                
+                totalSemua += (sisaSatuBulan * jumlahBulan);
+            }
+        });
+
+        if (modalTotalText) {
+            modalTotalText.textContent = formatRupiah(totalSemua);
+        }
+        return totalSemua;
+    }
+
+    // Event listener saat checkbox diubah atau dropdown diubah
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', window.hitungTotalBayar);
+    });
+
+    document.querySelectorAll('.bulan-select').forEach(select => {
+        select.addEventListener('change', window.hitungTotalBayar);
+    });
+
+    // Jalankan kalkulasi total sisa di card biru saat pertama kali reload halaman
+    hitungRingkasanTotal();
+});
+
+// Fungsi untuk mengontrol Modal
+function bukaModalKonfirmasi() {
+    const checkedBoxes = document.querySelectorAll('.tagihan-checkbox:checked');
+    
+    if (checkedBoxes.length === 0) {
+        alert('Silakan pilih minimal satu tagihan yang ingin dibayar!');
+        return;
+    }
+
+    // Hitung ulang nominal saat modal akan dibuka
+    window.hitungTotalBayar();
+
+    const modal = document.getElementById('modal-pembayaran');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function tutupModalKonfirmasi() {
+    const modal = document.getElementById('modal-pembayaran');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}
 </script>
 @endsection

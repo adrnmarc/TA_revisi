@@ -4,6 +4,20 @@
 @section('page_title', 'Verifikasi Pembayaran')
 
 @section('content')
+    {{-- HAPUS SPINNER BAWAAN BROWSER --}}
+    <style>
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        /* Firefox */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+
     <p class="text-xs text-slate-400 -mt-5 mb-6">Sistem Informasi Pembayaran Keuangan Sekolah</p>
 
     @if(session('sukses'))
@@ -13,9 +27,9 @@
     @endif
 
     @if(session('gagal'))
-    <div class="mb-4 p-4 text-sm text-red-800 bg-red-50 rounded-xl border border-red-100 font-semibold flex items-center gap-2">
-        <span>{{ session('gagal') }}</span>
-    </div>
+        <div class="mb-4 p-4 text-sm text-red-800 bg-red-50 rounded-xl border border-red-100 font-semibold flex items-center gap-2">
+            <span>{{ session('gagal') }}</span>
+        </div>
     @endif
 
     <div class="flex gap-2 mb-6">
@@ -59,7 +73,6 @@
                             
                             <td class="py-4 px-6">
                                 @php
-                                    // Logika: Ambil bukti dari cicilan terbaru (pembayaran), jika tidak ada ambil dari detail_tagihan
                                     $bukti = $pembayaran->pembayarans->last()->bukti_bayar ?? $pembayaran->bukti_bayar;
                                 @endphp
 
@@ -78,30 +91,26 @@
                             @if($pembayaran->status_tagihan != 'Lunas' && (!empty($pembayaran->bukti_bayar) || $pembayaran->pembayarans->count() > 0))
                                 
                                 @if(str_contains(strtolower($pembayaran->nama_iuran), 'program'))
-                                    <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST" class="flex flex-col gap-1">
+                                    <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST" class="flex flex-col gap-1 items-center">
                                         @csrf
-                                        <input type="number" name="jumlah_diterima" class="w-24 border rounded p-1 text-[10px]" placeholder="Nominal" required>
-                                        <button type="submit" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">CICIL</button>
+                                        {{-- Input Nominal: spinner di-hide lewat CSS, min="1" ditambahkan untuk pengamanan HTML5 --}}
+                                        <input type="number" name="jumlah_diterima" min="1" class="input-nominal-cicil w-24 border border-slate-300 rounded p-1 text-[10px] text-center focus:outline-none focus:border-emerald-600" placeholder="Nominal" required>
+                                        <button type="submit" class="w-24 bg-emerald-600 hover:bg-emerald-700 text-white py-1 rounded text-[10px] font-bold transition cursor-pointer">CICIL</button>
                                     </form>
                                 @else
                                     <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST">
                                         @csrf
-                                        
                                         @php
-                                            // Sistem menghitung otomatis sisa yang harus dilunasi agar tidak error
                                             $sudahBayar = $pembayaran->pembayarans->sum('jumlah_diterima');
                                             $sisaTagihan = $pembayaran->jumlah_bayar - $sudahBayar;
                                         @endphp
-                                        
-                                        {{-- Mengirimkan angka sisa tagihan secara sembunyi-sembunyi --}}
                                         <input type="hidden" name="jumlah_diterima" value="{{ $sisaTagihan }}">
-                                        
-                                        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded text-[10px] font-bold hover:bg-blue-700 transition">LUNAS</button>
+                                        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded text-[10px] font-bold hover:bg-blue-700 transition cursor-pointer">LUNAS</button>
                                     </form>
                                 @endif
                                 
                                 <button type="button" onclick="document.getElementById('modal-tolak-{{ $pembayaran->id_detail }}').classList.remove('hidden')" 
-                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-[10px] font-bold mt-1">TOLAK</button>
+                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-[10px] font-bold mt-1 cursor-pointer">TOLAK</button>
 
                             @elseif($pembayaran->status_tagihan == 'Lunas')
                                 <span class="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-2 py-1 rounded">SUDAH LUNAS</span>
@@ -118,8 +127,8 @@
                                     @csrf
                                     <textarea name="alasan" class="w-full border border-slate-200 rounded-xl p-3 mb-4 text-sm" rows="3" required placeholder="Tulis alasan..."></textarea>
                                     <div class="flex justify-end gap-2">
-                                        <button type="button" onclick="document.getElementById('modal-tolak-{{ $pembayaran->id_detail }}').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-lg text-sm">Batal</button>
-                                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">Kirim</button>
+                                        <button type="button" onclick="document.getElementById('modal-tolak-{{ $pembayaran->id_detail }}').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-lg text-sm cursor-pointer">Batal</button>
+                                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm cursor-pointer">Kirim</button>
                                     </div>
                                 </form>
                             </div>
@@ -134,7 +143,7 @@
     
     <div id="modalPreview" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4" onclick="closeModal()">
         <div class="relative max-w-4xl w-full">
-            <button onclick="closeModal()" class="absolute -top-10 right-0 text-white font-bold text-xl">TUTUP [X]</button>
+            <button onclick="closeModal()" class="absolute -top-10 right-0 text-white font-bold text-xl cursor-pointer">TUTUP [X]</button>
             <img id="gambarPreview" src="" class="w-full h-auto rounded-lg shadow-2xl">
         </div>
     </div>
@@ -147,5 +156,17 @@
         function closeModal() {
             document.getElementById('modalPreview').classList.add('hidden');
         }
+
+        // BLOKIR MANUAL KETIKAN MINUS (-), PLUS (+), DAN HURUF 'E'
+        document.addEventListener("DOMContentLoaded", function() {
+            const inputs = document.querySelectorAll('.input-nominal-cicil');
+            inputs.forEach(input => {
+                input.addEventListener('keydown', function(e) {
+                    if (['e', 'E', '-', '+', ',', '.'].includes(e.key)) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
     </script>
 @endsection

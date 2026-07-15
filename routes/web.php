@@ -15,7 +15,7 @@ Route::get('/', function () {
 
 // --- 2. LOGIN AUTHENTICATION ---
 // Login Admin
-Route::get('/login', function () { return view('admin.login'); });
+Route::get('/login', function () { return view('admin.login'); })->name('login');
 Route::post('/login', [LoginController::class, 'loginAdmin']); 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
@@ -23,9 +23,11 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/login-ortu', function () { return view('ortu.login'); });
 Route::post('/login-ortu', [LoginController::class, 'loginOrtu']); 
 
-// --- 3. RUTE ORANG TUA 
+
+// --- 3. RUTE ORANG TUA ---
 Route::get('/ortu/dashboard', [OrtuController::class, 'dashboard']);
-Route::get('/ortu/tagihan', [OrtuController::class, 'tagihan']);
+// DIUBAH: Mengarahkan ke TagihanController agar tagihan Lunas dan Aktif terpisah dengan benar
+Route::get('/ortu/tagihan', [TagihanController::class, 'ortuIndex']); 
 Route::get('/ortu/bayar/{id}', [OrtuController::class, 'formBayar']);
 Route::post('/ortu/bayar/{id}', [OrtuController::class, 'prosesBayar']);
 Route::post('ortu/bayar-banyak', [OrtuController::class, 'bayarBanyak']);
@@ -33,7 +35,8 @@ Route::get('/riwayat', [RiwayatPembayaranController::class, 'index'])->name('riw
 Route::get('/ortu/pengumuman', [OrtuController::class, 'pengumuman'])->name('ortu.pengumuman');
 Route::get('/ortu/profil', [ProfilAnakController::class, 'index'])->name('ortu.profil');
 
-// --- 4. RUTE ADMIN (Dilindungi Middleware) ---
+
+// --- 4. RUTE ADMIN (Dilindungi Middleware Admin) ---
 Route::middleware([CheckAdminLogin::class])->group(function () {
     
     // Dashboard Admin

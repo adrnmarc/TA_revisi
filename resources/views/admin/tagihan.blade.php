@@ -4,22 +4,42 @@
 @section('page_title', 'Kelola Tagihan')
 
 @section('content')
+    {{-- STYLE TAMBAHAN UNTUK MENGHAPUS SPINNER --}}
+    <style>
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+
     {{-- Notifikasi Sukses --}}
     @if(session('sukses'))
-        <div class="mb-4 p-4 text-sm text-emerald-800 bg-emerald-50 rounded-xl border border-emerald-100 font-semibold flex items-center gap-2">
-            <i data-lucide="check-circle" class="w-4 h-4"></i>
+        <div class="mb-4 p-4 text-sm text-emerald-800 bg-emerald-50 rounded-xl border border-emerald-100 font-semibold flex items-center gap-2 shadow-sm">
+            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
             <span>{{ session('sukses') }}</span>
+        </div>
+    @endif
+
+    {{-- KOTAK NOTIFIKASI ERROR --}}
+    @if(session('error'))
+        <div class="mb-4 p-4 text-sm text-rose-800 bg-rose-50 rounded-xl border border-rose-100 font-semibold flex items-center gap-2 shadow-sm animate-shake">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600"></i>
+            <span>{{ session('error') }}</span>
         </div>
     @endif
 
     {{-- KOTAK NOTIFIKASI VALIDASI GAGAL --}}
     @if($errors->any())
-        <div class="mb-4 p-4 text-sm text-rose-800 bg-rose-50 rounded-xl border border-rose-100 font-semibold">
+        <div class="mb-4 p-4 text-sm text-rose-800 bg-rose-50 rounded-xl border border-rose-100 font-semibold shadow-sm">
             <div class="flex items-center gap-2 mb-2">
-                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600"></i>
+                <i data-lucide="alert-circle" class="w-5 h-5 text-rose-600"></i>
                 <span>Gagal Menyimpan Data! Periksa kembali inputan Anda:</span>
             </div>
-            <ul class="list-disc pl-5 font-medium text-xs space-y-1 text-rose-700">
+            <ul class="list-disc pl-6 font-medium text-xs space-y-1 text-rose-700">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -61,7 +81,12 @@
                     @forelse($tagihans as $tagihan)
                         <tr class="baris-data hover:bg-slate-50/50 transition-colors">
                             <td class="py-4 px-6 text-slate-900 font-semibold kolom-siswa">{{ optional($tagihan->siswa)->nama ?? 'Tidak Diketahui' }}</td>
-                            <td class="py-4 px-6 kolom-jenis">{{ $tagihan->nama_tagihan }}</td>
+                            <td class="py-4 px-6 kolom-jenis">
+                                {{ $tagihan->nama_tagihan }}
+                                @if(optional($tagihan->detailTagihan)->status_tagihan == 'Dicicil' && optional($tagihan->detailTagihan)->cicilan_ke)
+                                    <span class="text-xs text-amber-600 font-semibold block">(Cicilan Ke-{{ $tagihan->detailTagihan->cicilan_ke }})</span>
+                                @endif
+                            </td>
                             <td class="py-4 px-6 text-xs text-slate-400 font-normal">
                                 {{ \Carbon\Carbon::parse($tagihan->jatuh_tempo ?? $tagihan->created_at)->format('d M Y') }}
                             </td>
@@ -89,7 +114,6 @@
                             </td>
                             <td class="py-4 px-6">
                                 <div class="flex items-center justify-center gap-2">
-                                    {{-- Tombol Edit Menggunakan HTML Data Attributes --}}
                                     <button type="button"
                                             class="btn-edit-tagihan p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                                             data-id="{{ $tagihan->id_tagihan }}"
@@ -97,7 +121,8 @@
                                             data-jenis="{{ $tagihan->nama_tagihan }}"
                                             data-nominal="{{ optional($tagihan->detailTagihan)->jumlah_bayar ?? 0 }}"
                                             data-tanggal="{{ \Carbon\Carbon::parse($tagihan->jatuh_tempo)->format('Y-m-d') }}"
-                                            data-status="{{ optional($tagihan->detailTagihan)->status_tagihan ?? 'Belum Lunas' }}">
+                                            data-status="{{ optional($tagihan->detailTagihan)->status_tagihan ?? 'Belum Lunas' }}"
+                                            data-cicilan="{{ optional($tagihan->detailTagihan)->cicilan_ke ?? '' }}">
                                         <i data-lucide="pencil" class="w-4 h-4"></i>
                                     </button>
                                     
@@ -121,25 +146,8 @@
                             </td>
                         </tr>
                     @endforelse
-                    <tr id="pencarianKosong" class="hidden">
-                        <td colspan="6" class="py-12 text-center text-slate-400 font-medium">
-                            <div class="flex flex-col items-center justify-center gap-2">
-                                <i data-lucide="search" class="w-8 h-8 text-slate-300"></i>
-                                <span>Data yang Anda cari tidak ditemukan.</span>
-                            </div>
-                        </td>
-                    </tr>
                 </tbody>
             </table>
-        </div>
-
-        <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500 bg-slate-50/50">
-            <span>Total {{ $tagihans->count() }} Tagihan</span>
-            <div class="flex items-center gap-1">
-                <button class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed" disabled>Sebelumnya</button>
-                <button class="px-3 py-1.5 rounded-lg bg-[#1E88E5] text-white">1</button>
-                <button class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50">Selanjutnya</button>
-            </div>
         </div>
     </div>
 
@@ -157,7 +165,7 @@
                 @csrf
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Pilih Siswa</label>
-                    <select name="siswa_id" required oninvalid="this.setCustomValidity('Silakan pilih salah satu siswa dalam daftar.')" oninput="this.setCustomValidity('')" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                    <select name="siswa_id" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="">-- Pilih Anak Didik --</option>
                         @foreach($daftarSiswa as $siswa)
                             <option value="{{ $siswa->nis }}">{{ $siswa->nama }} ({{ $siswa->kelas }})</option>
@@ -166,7 +174,7 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Tagihan</label>
-                    <select name="jenis_tagihan" id="buat_jenis_tagihan" required oninvalid="this.setCustomValidity('Silakan tentukan jenis tagihan terlebih dahulu.')" oninput="this.setCustomValidity('')" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                    <select name="jenis_tagihan" id="buat_jenis_tagihan" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="" disabled selected data-harga="">-- Pilih Jenis Tagihan --</option>
                         <option value="Uang Sekolah / Uang Program" data-harga="1000000">Uang Sekolah (Uang Program)</option>
                         <option value="Uang Ekskul" data-harga="60000">Uang Ekskul</option>
@@ -177,7 +185,8 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Nominal (Rupiah)</label>
-                    <input type="number" name="nominal" id="buat_nominal" required oninvalid="this.setCustomValidity('Kolom nominal ini wajib diisi dengan angka.')" oninput="this.setCustomValidity('')" placeholder="Contoh: 350000" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                    {{-- Input Nominal tanpa Spinner --}}
+                    <input type="number" name="nominal" id="buat_nominal" required placeholder="Contoh: 350000" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Tanggal Tagihan Dibuat</label>
@@ -225,6 +234,7 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Nominal (Rupiah)</label>
+                    {{-- Input Nominal Edit tanpa Spinner --}}
                     <input type="number" name="nominal" id="edit_nominal" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                 </div>
                 <div>
@@ -239,6 +249,16 @@
                         <option value="Lunas">Lunas</option>
                     </select>
                 </div>
+                
+                <div id="wrapper_cicilan_edit" class="hidden transition-all duration-300">
+                    <label class="text-xs font-semibold text-amber-600 block mb-1">Tahap Cicilan (Maksimal 3x)</label>
+                    <select name="cicilan_ke" id="edit_cicilan_ke" class="w-full px-4 py-2 text-sm bg-amber-50/50 border border-amber-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white transition-all">
+                        <option value="">-- Pilih Cicilan --</option>
+                        <option value="1">Cicilan Ke-1</option>
+                        <option value="2">Cicilan Ke-2</option>
+                        <option value="3">Cicilan Ke-3</option>
+                    </select>
+                </div>
 
                 <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 mt-4">
                     <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-xl cursor-pointer transition-colors">Batal</button>
@@ -248,10 +268,9 @@
         </div>
     </div>
 
-    {{-- SCRIPTS JAVASCRIPT --}}
+    {{-- JAVASCRIPT --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Kontrol Modal Tambah
             const modal = document.getElementById('modalTagihan');
             const btnBuka = document.getElementById('btnBukaTagihan');
             const btnTutup = document.getElementById('btnTutupTagihan');
@@ -268,64 +287,41 @@
             btnTutup.addEventListener('click', tutupModal);
             btnBatal.addEventListener('click', tutupModal);
 
-            // Fitur Live Search Sederhana di Sisi Klien
+            // Live Search
             const inputCari = document.getElementById('inputCari');
             const barisData = document.querySelectorAll('.baris-data');
-            const pencarianKosong = document.getElementById('pencarianKosong');
 
             inputCari.addEventListener('input', function() {
                 const filter = inputCari.value.toLowerCase().trim();
-                let adaDataCocok = false;
-
                 barisData.forEach(row => {
                     const namaSiswa = row.querySelector('.kolom-siswa').textContent.toLowerCase();
                     const jenisTagihan = row.querySelector('.kolom-jenis').textContent.toLowerCase();
-
                     if (namaSiswa.includes(filter) || jenisTagihan.includes(filter)) {
                         row.classList.remove('hidden');
-                        adaDataCocok = true;
                     } else {
                         row.classList.add('hidden');
                     }
                 });
-
-                if (!adaDataCocok && filter !== "") {
-                    pencarianKosong.classList.remove('hidden');
-                } else {
-                    pencarianKosong.classList.add('hidden');
-                }
             });
 
-            // Otomatisasi Nominal Harga di Modal Tambah
+            // Otomatisasi Nominal Buat
             const selectJenisBuat = document.getElementById('buat_jenis_tagihan');
             const inputNominalBuat = document.getElementById('buat_nominal');
 
-            if (selectJenisBuat && inputNominalBuat) {
-                selectJenisBuat.addEventListener('change', function() {
-                    const hargaSelected = this.options[this.selectedIndex].getAttribute('data-harga');
-                    inputNominalBuat.value = hargaSelected;
+            selectJenisBuat.addEventListener('change', function() {
+                inputNominalBuat.value = this.options[this.selectedIndex].getAttribute('data-harga');
+            });
 
-                    if (hargaSelected === "0") {
-                        inputNominalBuat.placeholder = "Masukkan nominal SPP...";
-                        inputNominalBuat.focus();
-                    }
-                });
-            }
-
-            // Otomatisasi Nominal Harga di Modal Edit
+            // Otomatisasi Nominal Edit
             const selectJenisEdit = document.getElementById('edit_jenis_tagihan');
             const inputNominalEdit = document.getElementById('edit_nominal');
 
-            if (selectJenisEdit && inputNominalEdit) {
-                selectJenisEdit.addEventListener('change', function() {
-                    const hargaSelected = this.options[this.selectedIndex].getAttribute('data-harga');
-                    if(hargaSelected !== null) {
-                        inputNominalEdit.value = hargaSelected;
-                    }
-                });
-            }
+            selectJenisEdit.addEventListener('change', function() {
+                const harga = this.options[this.selectedIndex].getAttribute('data-harga');
+                if(harga !== null) inputNominalEdit.value = harga;
+            });
 
-            // FILTER ANTI-HURUF & KARAKTER STRANGE DI INPUT NOMINAL
+            // KUNCI KEYBOARD: ANTI KETIK HURUF DAN TANDA MINUS (-) ATAU PLUS (+)
             [inputNominalBuat, inputNominalEdit].forEach(input => {
                 if(input) {
                     input.addEventListener('keydown', function(e) {
@@ -336,30 +332,50 @@
                 }
             });
 
-            // Kontrol Pembacaan Modal Edit Menggunakan Data Attributes
+            // Deteksi Status
+            const selectStatusEdit = document.getElementById('edit_status_tagihan');
+            const wrapperCicilanEdit = document.getElementById('wrapper_cicilan_edit');
+            const selectCicilanKe = document.getElementById('edit_cicilan_ke');
+
+            selectStatusEdit.addEventListener('change', function() {
+                if (this.value === 'Dicicil') {
+                    wrapperCicilanEdit.classList.remove('hidden');
+                    selectCicilanKe.setAttribute('required', 'required');
+                } else {
+                    wrapperCicilanEdit.classList.add('hidden');
+                    selectCicilanKe.removeAttribute('required');
+                    selectCicilanKe.value = '';
+                }
+            });
+
+            // Mapping Edit Modal
             const tombolEdit = document.querySelectorAll('.btn-edit-tagihan');
             tombolEdit.forEach(button => {
                 button.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    const nis = this.getAttribute('data-nis');
-                    const jenis = this.getAttribute('data-jenis');
-                    const nominal = this.getAttribute('data-nominal');
-                    const tanggal = this.getAttribute('data-tanggal');
+                    document.getElementById('formEditTagihan').action = '/admin/tagihan/' + this.getAttribute('data-id');
+                    document.getElementById('edit_siswa_id').value = this.getAttribute('data-nis');
+                    document.getElementById('edit_jenis_tagihan').value = this.getAttribute('data-jenis');
+                    document.getElementById('edit_nominal').value = this.getAttribute('data-nominal');
+                    document.getElementById('edit_tanggal_tagihan').value = this.getAttribute('data-tanggal');
+                    
                     const status = this.getAttribute('data-status');
-
-                    document.getElementById('formEditTagihan').action = '/admin/tagihan/' + id;
-                    document.getElementById('edit_siswa_id').value = nis;
-                    document.getElementById('edit_jenis_tagihan').value = jenis;
-                    document.getElementById('edit_nominal').value = nominal;
-                    document.getElementById('edit_tanggal_tagihan').value = tanggal;
                     document.getElementById('edit_status_tagihan').value = status;
+                    
+                    if (status === 'Dicicil') {
+                        wrapperCicilanEdit.classList.remove('hidden');
+                        selectCicilanKe.setAttribute('required', 'required');
+                        selectCicilanKe.value = this.getAttribute('data-cicilan');
+                    } else {
+                        wrapperCicilanEdit.classList.add('hidden');
+                        selectCicilanKe.removeAttribute('required');
+                        selectCicilanKe.value = '';
+                    }
                     
                     document.getElementById('modalEditTagihan').classList.remove('hidden');
                 });
             });
         });
 
-        // Fungsi Menutup Modal Edit
         function closeEditModal() {
             document.getElementById('modalEditTagihan').classList.add('hidden');
         }
