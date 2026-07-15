@@ -76,7 +76,7 @@ class OrtuController extends Controller
 
         return view('ortu.tagihan', compact('tagihans'));
     }
-   public function bayarBanyak(Request $request)
+    public function bayarBanyak(Request $request)
     {
         $request->validate([
             'tagihan_id'  => 'required|array|min:1',
