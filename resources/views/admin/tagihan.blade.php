@@ -118,7 +118,7 @@
                                             class="btn-edit-tagihan p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                                             data-id="{{ $tagihan->id_tagihan }}"
                                             data-nis="{{ $tagihan->nis }}"
-                                            data-jenis="{{ $tagihan->nama_tagihan }}"
+                                            data-kategori-id="{{ $tagihan->kategori_tagihan_id }}"
                                             data-nominal="{{ optional($tagihan->detailTagihan)->jumlah_bayar ?? 0 }}"
                                             data-tanggal="{{ \Carbon\Carbon::parse($tagihan->jatuh_tempo)->format('Y-m-d') }}"
                                             data-status="{{ optional($tagihan->detailTagihan)->status_tagihan ?? 'Belum Lunas' }}"
@@ -173,19 +173,16 @@
                     </select>
                 </div>
                 <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Tagihan</label>
-                    <select name="jenis_tagihan" id="buat_jenis_tagihan" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
-                        <option value="" disabled selected data-harga="">-- Pilih Jenis Tagihan --</option>
-                        <option value="Uang Sekolah / Uang Program" data-harga="1000000">Uang Sekolah (Uang Program)</option>
-                        <option value="Uang Ekskul" data-harga="60000">Uang Ekskul</option>
-                        <option value="Uang POMG" data-harga="10000">Uang POMG</option>
-                        <option value="Uang MMP" data-harga="50000">Uang MMP</option>
-                        <option value="Uang SPP / Bulan" data-harga="150000">Uang SPP / Bulan</option>
+                    <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Tagihan (Kategori)</label>
+                    <select name="kategori_tagihan_id" id="buat_kategori_tagihan" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                        <option value="" disabled selected data-harga="">-- Pilih Kategori Tagihan --</option>
+                        @foreach($daftarKategori as $kategori)
+                            <option value="{{ $kategori->id }}" data-harga="{{ $kategori->harga_default }}">{{ $kategori->nama_kategori }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Nominal (Rupiah)</label>
-                    {{-- Input Nominal tanpa Spinner --}}
                     <input type="number" name="nominal" id="buat_nominal" required placeholder="Contoh: 350000" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                 </div>
                 <div>
@@ -223,18 +220,15 @@
                     </select>
                 </div>
                 <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Tagihan</label>
-                    <select name="jenis_tagihan" id="edit_jenis_tagihan" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
-                        <option value="Uang Sekolah / Uang Program" data-harga="1000000">Uang Sekolah (Uang Program)</option>
-                        <option value="Uang Ekskul" data-harga="100000">Uang Ekskul</option>
-                        <option value="Uang POMG" data-harga="150000">Uang POMG</option>
-                        <option value="Uang MMP" data-harga="200000">Uang MMP</option>
-                        <option value="Uang SPP / Bulan" data-harga="0">Uang SPP / Bulan</option>
+                    <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Tagihan (Kategori)</label>
+                    <select name="kategori_tagihan_id" id="edit_kategori_tagihan_id" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                        @foreach($daftarKategori as $kategori)
+                            <option value="{{ $kategori->id }}" data-harga="{{ $kategori->harga_default }}">{{ $kategori->nama_kategori }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Nominal (Rupiah)</label>
-                    {{-- Input Nominal Edit tanpa Spinner --}}
                     <input type="number" name="nominal" id="edit_nominal" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                 </div>
                 <div>
@@ -251,7 +245,7 @@
                 </div>
                 
                 <div id="wrapper_cicilan_edit" class="hidden transition-all duration-300">
-                    <label class="text-xs font-semibold text-amber-600 block mb-1">Tahap Cicilan (Maksimal 3x)</label>
+                    <label class="text-xs font-semibold text-amber-600 block mb-1">Tahap Cicilan</label>
                     <select name="cicilan_ke" id="edit_cicilan_ke" class="w-full px-4 py-2 text-sm bg-amber-50/50 border border-amber-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white transition-all">
                         <option value="">-- Pilih Cicilan --</option>
                         <option value="1">Cicilan Ke-1</option>
@@ -305,18 +299,18 @@
             });
 
             // Otomatisasi Nominal Buat
-            const selectJenisBuat = document.getElementById('buat_jenis_tagihan');
+            const selectKategoriBuat = document.getElementById('buat_kategori_tagihan');
             const inputNominalBuat = document.getElementById('buat_nominal');
 
-            selectJenisBuat.addEventListener('change', function() {
+            selectKategoriBuat.addEventListener('change', function() {
                 inputNominalBuat.value = this.options[this.selectedIndex].getAttribute('data-harga');
             });
 
             // Otomatisasi Nominal Edit
-            const selectJenisEdit = document.getElementById('edit_jenis_tagihan');
+            const selectKategoriEdit = document.getElementById('edit_kategori_tagihan_id');
             const inputNominalEdit = document.getElementById('edit_nominal');
 
-            selectJenisEdit.addEventListener('change', function() {
+            selectKategoriEdit.addEventListener('change', function() {
                 const harga = this.options[this.selectedIndex].getAttribute('data-harga');
                 if(harga !== null) inputNominalEdit.value = harga;
             });
@@ -354,7 +348,7 @@
                 button.addEventListener('click', function() {
                     document.getElementById('formEditTagihan').action = '/admin/tagihan/' + this.getAttribute('data-id');
                     document.getElementById('edit_siswa_id').value = this.getAttribute('data-nis');
-                    document.getElementById('edit_jenis_tagihan').value = this.getAttribute('data-jenis');
+                    document.getElementById('edit_kategori_tagihan_id').value = this.getAttribute('data-kategori-id');
                     document.getElementById('edit_nominal').value = this.getAttribute('data-nominal');
                     document.getElementById('edit_tanggal_tagihan').value = this.getAttribute('data-tanggal');
                     

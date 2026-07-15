@@ -2,62 +2,99 @@
 @section('header', 'Pengumuman')
 
 @section('content')
-<div class="pt-8 px-8 max-w-5xl mx-auto pb-12">
-    
-    {{-- Container utama agar judul dan daftar menyatu --}}
-    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-        
-        <div class="flex items-center justify-between mb-8 pb-6 border-b border-slate-100">
-            <h2 class="text-2xl font-black text-slate-800">Pusat Informasi</h2>
-            <span class="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-full uppercase">
-                {{ $pengumuman->count() }} Pengumuman
-            </span>
+
+{{-- Font ceria untuk judul, tetap gampang dibaca untuk isi --}}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+    .font-mading { font-family: 'Baloo 2', cursive; }
+    .font-isi { font-family: 'Nunito', sans-serif; }
+
+    .papan-mading {
+        background-color: #E9D9B6;
+        background-image:
+            radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px);
+        background-size: 14px 14px;
+        border: 3px dashed #C9AD7F;
+    }
+
+    .sticky-note {
+        transition: transform .2s ease, box-shadow .2s ease;
+        box-shadow: 3px 4px 0 rgba(0,0,0,0.06);
+    }
+    .sticky-note:hover {
+        transform: rotate(0deg) scale(1.02) !important;
+        box-shadow: 4px 8px 16px rgba(0,0,0,0.12);
+        z-index: 10;
+    }
+    .sticky-note:nth-child(3n+1) { transform: rotate(-1.5deg); }
+    .sticky-note:nth-child(3n+2) { transform: rotate(1deg); }
+    .sticky-note:nth-child(3n+3) { transform: rotate(-0.5deg); }
+
+    .pushpin {
+        width: 18px; height: 18px;
+        border-radius: 50%;
+        box-shadow: 0 2px 3px rgba(0,0,0,0.25), inset 0 -2px 2px rgba(0,0,0,0.15), inset 0 2px 2px rgba(255,255,255,0.4);
+    }
+
+    @keyframes bob {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+    .bob { animation: bob 3s ease-in-out infinite; }
+</style>
+
+<div class="pt-8 px-8 pb-12" style="background-color:#FDF6EC;">
+    <div class="max-w-4xl mx-auto">
+
+        {{-- Header ceria --}}
+        <div class="flex items-center gap-3 mb-6">
+            <span class="text-3xl bob">📌</span>
+            <div>
+                <h1 class="font-mading font-extrabold text-2xl text-slate-700">Papan Mading Sekolah</h1>
+                <p class="font-isi text-sm text-slate-400">Kabar dan info seru buat Bapak/Ibu, ditempel langsung dari sekolah!</p>
+            </div>
         </div>
 
-        <div class="space-y-4">
+        {{-- Papan gabus / corkboard --}}
+        <div class="papan-mading rounded-[2rem] p-6 md:p-10 shadow-inner">
+
             @forelse($pengumuman as $item)
-                {{-- Kartu yang sekarang berada di dalam bingkai putih --}}
-                <div onclick="bukaDetail('{{ addslashes($item->judul) }}', '{{ addslashes($item->isi) }}', '{{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}')" 
-                     class="group bg-slate-50 p-6 rounded-2xl border border-slate-100 hover:border-emerald-200 hover:bg-white hover:shadow-lg transition-all duration-300 flex gap-6 items-start cursor-pointer">
-                    
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 flex items-center justify-center rounded-2xl bg-white text-emerald-600 border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
-                        </div>
+                @php
+                    // warna sticky note gantian biar papannya rame & ceria kayak mading beneran
+                    $warnaSet = [
+                        ['bg' => '#FFF3B0', 'pin' => '#F59E0B'], // kuning
+                        ['bg' => '#BFE9E0', 'pin' => '#0FA968'], // mint
+                        ['bg' => '#FFD3E0', 'pin' => '#F472B6'], // pink
+                        ['bg' => '#C9E4FF', 'pin' => '#60A5FA'], // biru
+                    ];
+                    $warna = $warnaSet[$loop->index % count($warnaSet)];
+                @endphp
+                <div class="sticky-note relative rounded-2xl p-5 mb-8 last:mb-0 inline-block w-full"
+                     style="background-color: {{ $warna['bg'] }};">
+
+                    {{-- pushpin --}}
+                    <span class="pushpin absolute -top-2 left-1/2 -translate-x-1/2" style="background-color: {{ $warna['pin'] }};"></span>
+
+                    <div class="flex justify-between items-start gap-3 mb-2">
+                        <h4 class="font-mading font-bold text-lg text-slate-700">{{ $item->judul }}</h4>
+                        <span class="flex-shrink-0 font-isi text-[10px] font-bold text-slate-500 uppercase tracking-wide bg-white/70 px-2.5 py-1 rounded-full">
+                            {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}
+                        </span>
                     </div>
-                    
-                    <div class="flex-grow">
-                        <h4 class="text-base font-bold text-slate-800 group-hover:text-emerald-700 mb-1">{{ $item->judul }}</h4>
-                        <p class="text-slate-500 text-sm line-clamp-2">{{ $item->isi }}</p>
-                    </div>
+                    <p class="font-isi text-sm text-slate-600 leading-relaxed">
+                        {{ $item->isi }}
+                    </p>
                 </div>
             @empty
-                <div class="text-center py-10 text-slate-400">Belum ada pengumuman.</div>
+                <div class="text-center py-16">
+                    <span class="text-5xl block mb-3">🎈</span>
+                    <p class="font-mading font-bold text-slate-600 text-lg mb-1">Mading masih kosong nih!</p>
+                    <p class="font-isi text-sm text-slate-500">Pengumuman baru bakal nempel di sini ya, Bapak/Ibu.</p>
+                </div>
             @endforelse
         </div>
     </div>
 </div>
-
-{{-- MODAL DETAIL --}}
-<div id="modalDetail" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-    <div class="bg-white rounded-3xl w-full max-w-lg p-8 shadow-2xl relative">
-        <button onclick="tutupDetail()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-800 text-xl font-bold p-2">&times;</button>
-        <span id="modalTanggal" class="text-[10px] font-bold text-emerald-600 uppercase"></span>
-        <h3 id="modalJudul" class="text-2xl font-black text-slate-800 mt-2 mb-4"></h3>
-        <p id="modalIsi" class="text-slate-600 leading-relaxed"></p>
-        <button onclick="tutupDetail()" class="mt-8 w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition">Tutup</button>
-    </div>
-</div>
-
-<script>
-    function bukaDetail(judul, isi, tanggal) {
-        document.getElementById('modalJudul').innerText = judul;
-        document.getElementById('modalIsi').innerText = isi;
-        document.getElementById('modalTanggal').innerText = tanggal;
-        document.getElementById('modalDetail').classList.remove('hidden');
-    }
-    function tutupDetail() {
-        document.getElementById('modalDetail').classList.add('hidden');
-    }
-</script>
 @endsection

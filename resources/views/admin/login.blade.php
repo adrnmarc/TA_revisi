@@ -81,12 +81,12 @@
                 @csrf
 
                 <div class="space-y-1.5">
-                    <label class="text-xs font-semibold text-slate-700 tracking-wide">Username</label>
+                    <label class="text-xs font-semibold text-slate-700 tracking-wide">Email</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                             <i data-lucide="user" class="w-4 h-4"></i>
                         </span>
-                        <input type="text" name="username" required placeholder="Masukkan username"
+                        <input type="text" name="username" required placeholder="Masukkan Email"
                             class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all font-medium text-slate-700">
                     </div>
                 </div>
