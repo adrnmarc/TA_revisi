@@ -85,35 +85,41 @@
                             </td>
                             
                             <td class="py-4 px-6 text-center">
-                            @if($pembayaran->status_tagihan != 'Lunas' && (!empty($pembayaran->bukti_bayar) || $pembayaran->pembayarans->count() > 0))
-                                
-                                @if(str_contains(strtolower($pembayaran->nama_iuran), 'program'))
-                                    <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST" class="flex flex-col gap-1 items-center">
-                                        @csrf
-                                        <input type="number" name="jumlah_diterima" min="1" class="input-nominal-cicil w-24 border border-slate-300 rounded p-1 text-[10px] text-center focus:outline-none focus:border-emerald-600" placeholder="Nominal" required>
-                                        <button type="submit" class="w-24 bg-emerald-600 hover:bg-emerald-700 text-white py-1 rounded text-[10px] font-bold transition cursor-pointer">CICIL</button>
-                                    </form>
-                                @else
-                                    <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST">
-                                        @csrf
-                                        @php
-                                            $sudahBayar = $pembayaran->pembayarans->sum('jumlah_diterima');
-                                            $sisaTagihan = $pembayaran->jumlah_bayar - $sudahBayar;
-                                        @endphp
-                                        <input type="hidden" name="jumlah_diterima" value="{{ $sisaTagihan }}">
-                                        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded text-[10px] font-bold hover:bg-blue-700 transition cursor-pointer">LUNAS</button>
-                                    </form>
-                                @endif
-                                
-                                <button type="button" onclick="document.getElementById('modal-tolak-{{ $pembayaran->id_detail }}').classList.remove('hidden')" 
-                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-[10px] font-bold mt-1 cursor-pointer">TOLAK</button>
+    @if($pembayaran->status_tagihan != 'Lunas' && (!empty($pembayaran->bukti_bayar) || $pembayaran->pembayarans->count() > 0))
+        
+        {{-- Ambil pembayaran yang sedang menunggu verifikasi untuk ditampilkan nilainya --}}
+        @php
+            $pendingPayment = $pembayaran->pembayarans->where('status', 'Menunggu Verifikasi')->first();
+            $nominalDiterima = $pendingPayment->jumlah_diterima ?? 0;
+        @endphp
 
-                            @elseif($pembayaran->status_tagihan == 'Lunas')
-                                <span class="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-2 py-1 rounded">SUDAH LUNAS</span>
-                            @else
-                                <span class="text-slate-300 text-[10px] italic">Menunggu upload...</span>
-                            @endif
-                            </td>
+        <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST" class="flex flex-col gap-1 items-center">
+            @csrf
+            
+            @if(str_contains(strtolower($pembayaran->nama_iuran), 'program'))
+                {{-- KHUSUS PROGRAM: Tampilkan input nominal (Otomatis dari Ortu, Admin bisa edit) --}}
+                <label class="text-[9px] text-slate-400">Nominal:</label>
+                <input type="number" name="jumlah_diterima" min="1" 
+                       value="{{ $nominalDiterima }}" 
+                       class="input-nominal-cicil w-24 border border-slate-300 rounded p-1 text-[10px] text-center focus:outline-none focus:border-emerald-600 mb-1" required>
+                <button type="submit" class="w-24 bg-emerald-600 hover:bg-emerald-700 text-white py-1 rounded text-[10px] font-bold transition cursor-pointer">KONFIRMASI</button>
+            
+            @else
+                {{-- KHUSUS NON-PROGRAM: Hidden nominal, Admin hanya lihat LUNAS --}}
+                <input type="hidden" name="jumlah_diterima" value="{{ $nominalDiterima }}">
+                <button type="submit" class="w-24 bg-blue-600 hover:bg-blue-700 text-white py-1 rounded text-[10px] font-bold transition cursor-pointer">LUNAS</button>
+            @endif
+        </form>
+        
+        <button type="button" onclick="document.getElementById('modal-tolak-{{ $pembayaran->id_detail }}').classList.remove('hidden')" 
+                class="bg-red-600 hover:bg-red-700 text-white w-24 py-1 rounded text-[10px] font-bold mt-1 cursor-pointer">TOLAK</button>
+
+    @elseif($pembayaran->status_tagihan == 'Lunas')
+        <span class="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-2 py-1 rounded">SUDAH LUNAS</span>
+    @else
+        <span class="text-slate-300 text-[10px] italic">Menunggu upload...</span>
+    @endif
+</td>
                         </tr>
 
                         <div id="modal-tolak-{{ $pembayaran->id_detail }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

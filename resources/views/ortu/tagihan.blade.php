@@ -36,7 +36,7 @@
         </div>
     @endif
 
-    {{-- Notifikasi Error / Gagal --}}
+    {{-- Notifikasi Error --}}
     @if(session('error'))
         <div class="bg-rose-50 border-l-4 border-rose-500 p-4 mb-6 rounded-r-xl shadow-sm">
             <div class="flex">
@@ -63,13 +63,11 @@
                 <p class="text-gray-500">Tidak ada tagihan aktif yang perlu dibayar.</p>
             </div>
         @else
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 items-start">
                 @foreach ($tagihans as $tagihan)
                     @php
                         $namaIuranLower = strtolower($tagihan->nama_iuran);
                         $isSpp = \Illuminate\Support\Str::contains($namaIuranLower, 'spp');
-                        
-                        // Deteksi Uang Program / Sekolah
                         $isProgram = \Illuminate\Support\Str::contains($namaIuranLower, 'program') || \Illuminate\Support\Str::contains($namaIuranLower, 'sekolah');
                         
                         $totalTerbayarValid = $tagihan->pembayarans->where('status', '!=', 'Ditolak')->sum('jumlah_diterima');
@@ -82,8 +80,8 @@
                     @endphp
 
                     <div class="bg-white rounded-2xl border-2 border-gray-100 p-6 shadow-sm hover:shadow-md transition duration-300 relative">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
+                        <div class="flex justify-between items-start mb-4 gap-4">
+                            <div class="flex-1">
                                 <h4 class="font-bold text-gray-800 text-lg leading-tight">{{ $tagihan->nama_iuran }}</h4>
                                 <span class="text-xs font-semibold text-red-500 mt-1 block">
                                     Jatuh Tempo: {{ $tagihan->tagihan ? \Carbon\Carbon::parse($tagihan->tagihan->jatuh_tempo)->translatedFormat('d M Y') : '-' }}
@@ -91,13 +89,13 @@
                             </div>
                             
                             @if($tagihan->status_tagihan == 'Belum Lunas')
-                                <span class="bg-red-50 text-red-600 text-[10px] px-2.5 py-1.5 rounded-full font-bold border border-red-100 tracking-wide">BELUM LUNAS</span>
+                                <span class="shrink-0 whitespace-nowrap bg-red-50 text-red-600 text-[10px] px-2.5 py-1.5 rounded-full font-bold border border-red-100 tracking-wide">BELUM LUNAS</span>
                             @elseif(strtolower($tagihan->status_tagihan) == 'ditolak')
-                                <span class="bg-rose-50 text-rose-600 text-[10px] px-2.5 py-1.5 rounded-full font-bold border border-rose-200 tracking-wide">DITOLAK</span>
+                                <span class="shrink-0 whitespace-nowrap bg-rose-50 text-rose-600 text-[10px] px-2.5 py-1.5 rounded-full font-bold border border-rose-200 tracking-wide">DITOLAK</span>
                             @elseif(in_array($tagihan->status_tagihan, ['Menyicil', 'Mencicil', 'Dicicil']))
-                                <span class="bg-amber-50 text-amber-600 text-[10px] px-2.5 py-1.5 rounded-full font-bold border border-amber-100 tracking-wide">MENCICIL</span>
+                                <span class="shrink-0 whitespace-nowrap bg-amber-50 text-amber-600 text-[10px] px-2.5 py-1.5 rounded-full font-bold border border-amber-100 tracking-wide">MENCICIL</span>
                             @else
-                                <span class="bg-blue-50 text-blue-600 text-[10px] px-2.5 py-1.5 rounded-full font-bold border border-blue-100 tracking-wide">{{ strtoupper($tagihan->status_tagihan) }}</span>
+                                <span class="shrink-0 whitespace-nowrap bg-blue-50 text-blue-600 text-[10px] px-2.5 py-1.5 rounded-full font-bold border border-blue-100 tracking-wide">{{ strtoupper($tagihan->status_tagihan) }}</span>
                             @endif
                         </div>
 
@@ -106,15 +104,17 @@
                             <h5 class="text-2xl font-black text-gray-800 mt-1">Rp {{ number_format($sisaReal, 0, ',', '.') }}</h5>
                         </div>
 
+                        {{-- Bagian Menunggu Verifikasi --}}
                         @if($tagihan->status_tagihan == 'Menunggu Verifikasi')
                             <div class="bg-amber-50 rounded-xl p-4 mt-6 border border-amber-200 text-center shadow-inner">
                                 <svg class="mx-auto h-8 w-8 text-amber-500 mb-2 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <h6 class="text-sm font-bold text-amber-800">Sedang Diverifikasi</h6>
-                                <p class="text-[11px] text-amber-600 mt-1 font-medium">Pembayaran Anda sedang dicek oleh Admin. Anda tidak dapat melakukan pembayaran ulang pada tagihan ini.</p>
+                                <p class="text-[11px] text-amber-600 mt-1 font-medium">Pembayaran Anda sedang dicek oleh Admin.</p>
                             </div>
                         @else
+                            {{-- Status Ditolak --}}
                             @php
                                 $pembayaranTerakhir = isset($tagihan->pembayarans) ? $tagihan->pembayarans->last() : null;
                                 $isDitolak = $pembayaranTerakhir && strtolower($pembayaranTerakhir->status) === 'ditolak';
@@ -135,6 +135,7 @@
                                 </div>
                             @endif
 
+                            {{-- Form Input --}}
                             <div class="bg-blue-50/50 rounded-xl p-4 mt-4 border border-blue-100/50 relative">
                                 <label class="flex items-center space-x-3 cursor-pointer">
                                     <input type="checkbox" name="tagihan_id[]" value="{{ $tagihan->id_detail }}" 
@@ -145,6 +146,7 @@
                                     <span class="text-sm font-bold text-blue-800 select-none">Pilih Tagihan Ini</span>
                                 </label>
 
+                                {{-- Opsi Bulan SPP --}}
                                 @if($isSpp)
                                     <div class="mt-3 bg-white p-3 rounded-lg border border-blue-100">
                                         <span class="text-[10px] font-bold text-blue-900 block mb-1.5 uppercase tracking-wider">BAYAR UNTUK BEBERAPA BULAN?</span>
@@ -174,17 +176,24 @@
                                            {{ !$isProgram ? 'readonly' : '' }}
                                            class="input-nominal-bayar w-full {{ !$isProgram ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white border-blue-300 text-blue-800 shadow-sm' }} px-3.5 py-2.5 rounded-lg font-bold text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                                            placeholder="Ketik nominal transfer...">
-                                    
+                                
+                                    @if($isProgram)
+                                        <div class="mt-3">
+                                            <p class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded inline-block border border-blue-100">
+                                                ℹ️ Maksimal Cicilan: 3 Kali
+                                            </p>
+                                        </div>
+                                    @endif       
                                     <div class="flex gap-2 mt-3 flex-wrap">
+                                        {{-- Tombol Cicilan (Hanya untuk Program) --}}
                                         @if($isProgram)
                                             <button type="button" 
-                                                    onclick="setNominalX('{{ $tagihan->id_detail }}', {{ $rekomendasiCicilan }})" 
+                                                    onclick="aktifkanInput('{{ $tagihan->id_detail }}'); setNominalX('{{ $tagihan->id_detail }}', {{ $rekomendasiCicilan }})" 
                                                     class="flex-1 bg-blue-100/70 text-blue-700 text-[10px] px-2 py-2 rounded border border-blue-200 hover:bg-blue-200 transition font-bold uppercase tracking-wider text-center">
-                                                 Cicilan
+                                                 CICILAN
                                             </button>
                                         @endif
                                         
-                                        {{-- TAMBAHAN: Memberi ID ke tombol lunas agar JS bisa mengubah tulisannya --}}
                                         <button type="button" 
                                                 id="btn_lunas_{{ $tagihan->id_detail }}"
                                                 onclick="setNominalX('{{ $tagihan->id_detail }}', {{ $sisaReal }})" 
@@ -228,7 +237,6 @@
                         <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     </div>
                     <h3 class="text-xl font-bold tracking-wide">Konfirmasi Pembayaran</h3>
-                    <p class="text-blue-100 text-xs mt-1 font-medium">Selesaikan proses pembayaran Anda</p>
                 </div>
 
                 <div class="p-6">
@@ -267,7 +275,6 @@
                                 <div class="text-sm text-gray-600" id="file-name-display">
                                     <span class="font-bold text-blue-600">Pilih file</span> atau tarik gambar ke sini
                                 </div>
-                                <p class="text-[10px] text-gray-400 font-medium">Maksimal 5MB (JPG, JPEG, PNG)</p>
                             </div>
                         </div>
                     </div>
@@ -278,7 +285,6 @@
                         </button>
                         <button type="submit" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-blue-200 transition duration-200 flex justify-center items-center gap-2 group">
                             <span>Kirim Pembayaran</span>
-                            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </button>
                     </div>
                 </div>
@@ -288,198 +294,189 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const checkboxes = document.querySelectorAll('.tagihan-checkbox');
-    const modalTotalText = document.getElementById('total-transfer-modal');
-    const ringkasanSisaText = document.getElementById('ringkasan-total-sisa');
-    const fileUpload = document.getElementById('file-upload');
-    const fileNameDisplay = document.getElementById('file-name-display');
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxes = document.querySelectorAll('.tagihan-checkbox');
+        const modalTotalText = document.getElementById('total-transfer-modal');
+        const ringkasanSisaText = document.getElementById('ringkasan-total-sisa');
+        const fileUpload = document.getElementById('file-upload');
+        const fileNameDisplay = document.getElementById('file-name-display');
 
-    if(fileUpload) {
-        fileUpload.addEventListener('change', function(e) {
-            if(e.target.files.length > 0) {
-                fileNameDisplay.innerHTML = `<span class="font-bold text-emerald-600 border border-emerald-200 bg-emerald-50 px-2 py-1 rounded truncate block max-w-full">✓ ${e.target.files[0].name}</span>`;
-            } else {
-                fileNameDisplay.innerHTML = `<span class="font-bold text-blue-600">Pilih file</span> atau tarik gambar ke sini`;
+        // FUNGSI AKTIFKAN INPUT MANUAL
+        window.aktifkanInput = function(id) {
+            const inputNominal = document.getElementById(`input_nominal_${id}`);
+            if (inputNominal) {
+                inputNominal.removeAttribute('readonly');
+                inputNominal.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
+                inputNominal.classList.add('bg-white', 'border-blue-300', 'text-blue-800');
+                inputNominal.focus();
             }
-        });
-    }
-
-    function formatRupiah(angka) {
-        return 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(angka);
-    }
-
-    function hitungRingkasanTotal() {
-        let totalSisaSemua = 0;
-        checkboxes.forEach(checkbox => {
-            totalSisaSemua += parseFloat(checkbox.getAttribute('data-sisa')) || 0;
-        });
-        if (ringkasanSisaText) {
-            ringkasanSisaText.textContent = formatRupiah(totalSisaSemua);
         }
-    }
 
-    function handleCheckboxChange(checkbox) {
-        const idDetail = checkbox.getAttribute('data-id');
-        const wrapper = document.getElementById(`wrapper-nominal-${idDetail}`);
-        const inputNominal = document.getElementById(`input_nominal_${idDetail}`);
-        
-        if (checkbox.checked) {
-            wrapper.classList.remove('hidden');
-            setTimeout(() => {
-                wrapper.classList.add('opacity-100');
-                wrapper.classList.remove('opacity-0');
-            }, 50);
-            inputNominal.removeAttribute('disabled');
-        } else {
-            wrapper.classList.add('opacity-0');
-            wrapper.classList.remove('opacity-100');
-            setTimeout(() => {
-                wrapper.classList.add('hidden');
-            }, 300);
-            inputNominal.setAttribute('disabled', 'true');
+        if(fileUpload) {
+            fileUpload.addEventListener('change', function(e) {
+                if(e.target.files.length > 0) {
+                    fileNameDisplay.innerHTML = `<span class="font-bold text-emerald-600 border border-emerald-200 bg-emerald-50 px-2 py-1 rounded truncate block max-w-full">✓ ${e.target.files[0].name}</span>`;
+                }
+            });
         }
-        window.hitungTotalBayar();
-    }
 
-    window.setNominalX = function(id, nominal) {
-        const input = document.getElementById(`input_nominal_${id}`);
-        input.value = nominal;
-        validateNominalX(id);
-        window.hitungTotalBayar();
-    }
+        function formatRupiah(angka) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(angka);
+        }
 
-    function validateNominalX(id) {
+        function hitungRingkasanTotal() {
+            let totalSisaSemua = 0;
+            checkboxes.forEach(checkbox => {
+                totalSisaSemua += parseFloat(checkbox.getAttribute('data-sisa')) || 0;
+            });
+            if (ringkasanSisaText) {
+                ringkasanSisaText.textContent = formatRupiah(totalSisaSemua);
+            }
+        }
+
+        function handleCheckboxChange(checkbox) {
+            const idDetail = checkbox.getAttribute('data-id');
+            const wrapper = document.getElementById(`wrapper-nominal-${idDetail}`);
+            const inputNominal = document.getElementById(`input_nominal_${idDetail}`);
+            
+            if (checkbox.checked) {
+                wrapper.classList.remove('hidden');
+                setTimeout(() => {
+                    wrapper.classList.add('opacity-100');
+                    wrapper.classList.remove('opacity-0');
+                }, 50);
+                inputNominal.removeAttribute('disabled');
+            } else {
+                wrapper.classList.add('opacity-0');
+                wrapper.classList.remove('opacity-100');
+                setTimeout(() => {
+                    wrapper.classList.add('hidden');
+                }, 300);
+                inputNominal.setAttribute('disabled', 'true');
+            }
+            window.hitungTotalBayar();
+        }
+
+        window.setNominalX = function(id, nominal) {
+            const input = document.getElementById(`input_nominal_${id}`);
+            input.value = nominal;
+            validateNominalX(id);
+            window.hitungTotalBayar();
+        }
+
+        function validateNominalX(id) {
         const input = document.getElementById(`input_nominal_${id}`);
         const errorMsg = document.getElementById(`error_${id}`);
         const maxVal = parseFloat(input.getAttribute('max'));
-        const minVal = parseFloat(input.getAttribute('min')) || 1000;
         
-        if (parseFloat(input.value) > maxVal) {
-            input.value = maxVal;
+        // Biarkan user mengetik, kita hanya mengecek apakah angkanya valid
+        if (input.value !== "" && parseFloat(input.value) > maxVal) {
+            input.value = maxVal; // Hanya batasi jika melebihi sisa tagihan
             errorMsg.classList.remove('hidden');
-        } else if (parseFloat(input.value) < minVal) {
-            input.value = minVal;
-            errorMsg.classList.add('hidden');
+            errorMsg.textContent = "Nominal melebihi sisa!";
+        } else if (input.value !== "" && parseFloat(input.value) < 1) {
+            // Jangan hapus angka yang diketik, cukup sembunyikan atau beri peringatan
+            errorMsg.classList.remove('hidden');
+            errorMsg.textContent = "Minimal Rp 1";
         } else {
             errorMsg.classList.add('hidden');
         }
+        
+        window.hitungTotalBayar();
     }
 
-    // =========================================================================
-    // PERBAIKAN: EVENT LISTENER UNTUK SELECT BULAN SPP AGAR DINAMIS
-    // =========================================================================
-    document.querySelectorAll('.bulan-select').forEach(select => {
-        select.addEventListener('change', function() {
-            // Dapatkan ID tagihan dari name="jumlah_bulan[ID]"
-            const idMatch = this.name.match(/\d+/);
-            if (!idMatch) return;
-            const id = idMatch[0];
-            
-            // Ambil harga 1 bulan dari attribute checkbox
-            const checkbox = document.querySelector(`.tagihan-checkbox[data-id="${id}"]`);
-            const hargaSatuBulan = parseFloat(checkbox.getAttribute('data-sisa'));
-            
-            // Hitung total baru
-            const jumlahBulan = parseInt(this.value);
-            const totalBaru = hargaSatuBulan * jumlahBulan;
-            
-            // Update input form
-            const inputNominal = document.getElementById(`input_nominal_${id}`);
-            if (inputNominal) {
-                inputNominal.value = totalBaru;
-                inputNominal.setAttribute('max', totalBaru); // Update limit maksimalnya
-                inputNominal.setAttribute('min', totalBaru); // Update limit minimalnya
-            }
-            
-            // Update tulisan tombol LUNAS
-            const btnLunas = document.getElementById(`btn_lunas_${id}`);
-            if (btnLunas) {
-                btnLunas.innerHTML = `Lunas (${formatRupiah(totalBaru)})`;
-                btnLunas.setAttribute('onclick', `setNominalX('${id}', ${totalBaru})`);
-            }
-            
-            // Hitung ulang total di Modal
-            window.hitungTotalBayar();
+        document.querySelectorAll('.bulan-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const idMatch = this.name.match(/\d+/);
+                if (!idMatch) return;
+                const id = idMatch[0];
+                const checkbox = document.querySelector(`.tagihan-checkbox[data-id="${id}"]`);
+                const hargaSatuBulan = parseFloat(checkbox.getAttribute('data-sisa'));
+                const jumlahBulan = parseInt(this.value);
+                const totalBaru = hargaSatuBulan * jumlahBulan;
+                const inputNominal = document.getElementById(`input_nominal_${id}`);
+                if (inputNominal) {
+                    inputNominal.value = totalBaru;
+                    inputNominal.setAttribute('max', totalBaru);
+                    inputNominal.setAttribute('min', totalBaru);
+                }
+                const btnLunas = document.getElementById(`btn_lunas_${id}`);
+                if (btnLunas) {
+                    btnLunas.innerHTML = `Lunas (${formatRupiah(totalBaru)})`;
+                    btnLunas.setAttribute('onclick', `setNominalX('${id}', ${totalBaru})`);
+                }
+                window.hitungTotalBayar();
+            });
         });
-    });
 
-    // =========================================================================
-    // PERBAIKAN: HITUNG TOTAL BAYAR SEKARANG JAUH LEBIH SIMPEL
-    // =========================================================================
-    window.hitungTotalBayar = function() {
-        let totalSemua = 0;
+        window.hitungTotalBayar = function() {
+            let totalSemua = 0;
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const idDetail = checkbox.value;
+                    const inputNominal = document.getElementById(`input_nominal_${idDetail}`);
+                    const nilaiInput = inputNominal ? parseFloat(inputNominal.value) : 0;
+                    totalSemua += nilaiInput;
+                }
+            });
+            if (modalTotalText) {
+                modalTotalText.textContent = formatRupiah(totalSemua);
+            }
+            return totalSemua;
+        }
 
         checkboxes.forEach(checkbox => {
-            if (checkbox.checked) {
-                const idDetail = checkbox.value;
-                const inputNominal = document.getElementById(`input_nominal_${idDetail}`);
-                
-                // Karena nilai input sudah dikalikan oleh script select dropdown di atas,
-                // kita cukup tambahkan nilai inputnya mentah-mentah tanpa dikalikan lagi.
-                const nilaiInput = inputNominal ? parseFloat(inputNominal.value) : 0;
-                totalSemua += nilaiInput;
-            }
+            checkbox.addEventListener('change', function() {
+                handleCheckboxChange(this);
+            });
         });
 
-        if (modalTotalText) {
-            modalTotalText.textContent = formatRupiah(totalSemua);
+        document.querySelectorAll('.input-nominal-bayar').forEach(input => {
+            input.addEventListener('input', function() {
+                const id = this.getAttribute('id').replace('input_nominal_', '');
+                validateNominalX(id);
+                window.hitungTotalBayar();
+            });
+        });
+
+        hitungRingkasanTotal();
+    });
+
+    function bukaModalKonfirmasi() {
+        const checkedBoxes = document.querySelectorAll('.tagihan-checkbox:checked');
+        if (checkedBoxes.length === 0) {
+            alert('Silakan pilih minimal satu tagihan yang ingin dibayar!');
+            return;
         }
-        return totalSemua;
+        
+        const total = window.hitungTotalBayar();
+        if (total <= 0) {
+            alert('Total pembayaran tidak valid atau Rp 0.');
+            return;
+        }
+
+        const modal = document.getElementById('modal-pembayaran');
+        const modalContent = document.getElementById('modal-content');
+        
+        modal.classList.remove('hidden');
+        void modal.offsetWidth; 
+        
+        modal.classList.remove('opacity-0');
+        modalContent.classList.remove('scale-95');
+        modalContent.classList.add('scale-100');
     }
 
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            handleCheckboxChange(this);
-        });
-    });
-
-    document.querySelectorAll('.input-nominal-bayar').forEach(input => {
-        input.addEventListener('input', function() {
-            const id = this.getAttribute('id').replace('input_nominal_', '');
-            validateNominalX(id);
-            window.hitungTotalBayar();
-        });
-    });
-
-    hitungRingkasanTotal();
-});
-
-function bukaModalKonfirmasi() {
-    const checkedBoxes = document.querySelectorAll('.tagihan-checkbox:checked');
-    if (checkedBoxes.length === 0) {
-        alert('Silakan pilih minimal satu tagihan yang ingin dibayar!');
-        return;
+    function tutupModalKonfirmasi() {
+        const modal = document.getElementById('modal-pembayaran');
+        const modalContent = document.getElementById('modal-content');
+        
+        modal.classList.add('opacity-0');
+        modalContent.classList.remove('scale-100');
+        modalContent.classList.add('scale-95');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
     }
-    
-    const total = window.hitungTotalBayar();
-    if (total <= 0) {
-        alert('Total pembayaran tidak valid atau Rp 0.');
-        return;
-    }
-
-    const modal = document.getElementById('modal-pembayaran');
-    const modalContent = document.getElementById('modal-content');
-    
-    modal.classList.remove('hidden');
-    void modal.offsetWidth; 
-    
-    modal.classList.remove('opacity-0');
-    modalContent.classList.remove('scale-95');
-    modalContent.classList.add('scale-100');
-}
-
-function tutupModalKonfirmasi() {
-    const modal = document.getElementById('modal-pembayaran');
-    const modalContent = document.getElementById('modal-content');
-    
-    modal.classList.add('opacity-0');
-    modalContent.classList.remove('scale-100');
-    modalContent.classList.add('scale-95');
-    
-    setTimeout(() => {
-        modal.classList.add('hidden');
-    }, 300);
-}
 </script>
 @endsection

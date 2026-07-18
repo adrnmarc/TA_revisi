@@ -201,12 +201,12 @@
 
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Kelas</label>
-                    <select name="kelas" required
-                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
-                        <option value="">-- Pilih Kelas --</option>
-                        <option value="TK A">TK A</option>
-                        <option value="TK B">TK B</option>
-                        <option value="Playgroup">Playgroup</option>
+                    <select name="kelas" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                        <option value="" disabled selected>-- Pilih Kelas --</option>
+                        <option value="TK A - Kelompok 1">TK A - Kelompok 1</option>
+                        <option value="TK A - Kelompok 2">TK A - Kelompok 2</option>
+                        <option value="TK B - Kelompok 1">TK B - Kelompok 1</option>
+                        <option value="TK B - Kelompok 2">TK B - Kelompok 2</option>
                     </select>
                 </div>
 
@@ -316,9 +316,11 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Kelas</label>
                     <select name="kelas" id="edit_kelas" required
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
-                        <option value="TK A">TK A</option>
-                        <option value="TK B">TK B</option>
-                        <option value="Playgroup">Playgroup</option>
+                        <option value="" disabled selected>-- Pilih Kelas --</option>
+                        <option value="TK A - Kelompok 1">TK A - Kelompok 1</option>
+                        <option value="TK A - Kelompok 2">TK A - Kelompok 2</option>
+                        <option value="TK B - Kelompok 1">TK B - Kelompok 1</option>
+                        <option value="TK B - Kelompok 2">TK B - Kelompok 2</option>
                     </select>
                 </div>
 

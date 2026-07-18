@@ -8,6 +8,7 @@ use App\Models\Tagihan;
 use App\Models\Pembayaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class OrtuController extends Controller
@@ -103,6 +104,7 @@ class OrtuController extends Controller
     {
         $request->validate([
             'tagihan_id'  => 'required|array|min:1',
+            'nominal_bayar' => 'required|array',
             'bukti_bayar' => 'required|image|mimes:jpeg,png,jpg|max:5120'
         ], [
             'tagihan_id.required' => 'Pilih minimal satu tagihan yang ingin dibayar!',
@@ -117,7 +119,7 @@ class OrtuController extends Controller
         }
 
         // ====================================================================
-        // PERBAIKAN DI SINI: Menyimpan langsung ke public/bukti_bayar tanpa storage
+        // PERBAIKAN: Menyimpan langsung ke public/bukti_bayar tanpa storage
         // ====================================================================
         $file = $request->file('bukti_bayar');
         $namaFileBukti = 'bukti_ortu_' . time() . '.' . $file->getClientOriginalExtension();
@@ -129,68 +131,69 @@ class OrtuController extends Controller
         $pathBukti = 'bukti_bayar/' . $namaFileBukti;
         // ====================================================================
 
-        foreach ($request->tagihan_id as $id) {
-            $detail = DetailTagihan::with('tagihan')->find($id);
-            
-            if ($detail) {
-                // Perhitungan sisa tagihan agar nominal yang masuk ke 'jumlah_diterima' akurat
-                $totalTerbayar = Pembayaran::where('id_detail', $detail->id_detail)
-                    ->whereIn('status', ['Diterima', 'Lunas'])
-                    ->sum('jumlah_diterima');
-                $sisaBayar = $detail->jumlah_bayar - $totalTerbayar;
-
-                // 1. REKAM HISTORI DI TABEL PEMBAYARAN (Sesuai LRS)
-                Pembayaran::create([
-                    'id_detail'       => $detail->id_detail,
-                    'user_id'         => 1, // Menggunakan ID Admin/Sistem (1) untuk menghindari error Foreign Key 1452
-                    'tanggal_bayar'   => now(),
-                    'jumlah_diterima' => $sisaBayar, 
-                    'bukti_bayar'     => $pathBukti,            
-                    'status'          => 'Menunggu Verifikasi',
-                    'keterangan'      => 'Pembayaran via Portal Ortu'
-                ]);
-
-                // 2. UPDATE STATUS TAGIHAN
-                $tanggalUpdate = Carbon::parse($detail->tagihan->jatuh_tempo);
-                if (str_contains(strtolower($detail->nama_iuran), 'spp')) {
-                    $tanggalUpdate = $tanggalUpdate->day(5);
-                }
+        DB::transaction(function () use ($request, $pathBukti) {
+            foreach ($request->tagihan_id as $id) {
+                $detail = DetailTagihan::with('tagihan')->find($id);
                 
-                $detail->tagihan->update(['jatuh_tempo' => $tanggalUpdate->format('Y-m-d')]);
-
-                $detail->update([
-                    'status_tagihan' => 'Menunggu Verifikasi',
-                    'bukti_bayar'    => $pathBukti // Disimpan sementara agar Admin dapat melihat fotonya di halaman verifikasi
-                ]);
-
-                // 3. LOGIKA BAYAR DI MUKA (KLONING TAGIHAN)
-                $jumlahBulan = $request->jumlah_bulan[$id] ?? 1;
-
-                if ($jumlahBulan > 1 && str_contains(strtolower($detail->nama_iuran), 'spp')) {
-                    for ($i = 1; $i < $jumlahBulan; $i++) {
-                        $tanggalBaru = $tanggalUpdate->copy()->addMonths($i)->day(5);
-                        $namaBulanBaru = $tanggalBaru->translatedFormat('F Y');
-                        $namaIuranBaru = 'Uang SPP / Bulan - ' . $namaBulanBaru;
-
-                        $tagihanBaru = Tagihan::create([
-                            'nis'          => $detail->tagihan->nis,
-                            'nama_tagihan' => $namaIuranBaru,
-                            'jatuh_tempo'  => $tanggalBaru->format('Y-m-d'),
+                if ($detail) {
+                    // AMBIL NOMINAL DARI FORM (NOMINAL_BAYAR)
+                    $nominal = (float) ($request->nominal_bayar[$id] ?? 0);
+                    
+                    if ($nominal > 0) {
+                        // 1. REKAM HISTORI DI TABEL PEMBAYARAN
+                        Pembayaran::create([
+                            'id_detail'       => $detail->id_detail,
+                            'user_id'         => 1, // Default sistem
+                            'tanggal_bayar'   => now(),
+                            'jumlah_diterima' => $nominal, // MENGGUNAKAN NOMINAL DARI USER
+                            'bukti_bayar'     => $pathBukti,            
+                            'status'          => 'Menunggu Verifikasi',
+                            'keterangan'      => 'Pembayaran via Portal Ortu'
                         ]);
 
-                        DetailTagihan::create([
-                            'id_tagihan'     => $tagihanBaru->id_tagihan,
-                            'id_siswa'       => $detail->id_siswa,
-                            'nama_iuran'     => $namaIuranBaru,
-                            'jumlah_bayar'   => $detail->jumlah_bayar,
-                            'sisa_tagihan'   => $detail->jumlah_bayar,
+                        // 2. UPDATE STATUS TAGIHAN
+                        $tanggalUpdate = Carbon::parse($detail->tagihan->jatuh_tempo);
+                        if (str_contains(strtolower($detail->nama_iuran), 'spp')) {
+                            $tanggalUpdate = $tanggalUpdate->day(5);
+                        }
+                        
+                        $detail->tagihan->update(['jatuh_tempo' => $tanggalUpdate->format('Y-m-d')]);
+
+                        $detail->update([
                             'status_tagihan' => 'Menunggu Verifikasi',
                             'bukti_bayar'    => $pathBukti 
                         ]);
+
+                        // 3. LOGIKA BAYAR DI MUKA (KLONING TAGIHAN)
+                        $jumlahBulan = $request->jumlah_bulan[$id] ?? 1;
+
+                        if ($jumlahBulan > 1 && str_contains(strtolower($detail->nama_iuran), 'spp')) {
+                            for ($i = 1; $i < $jumlahBulan; $i++) {
+                                $tanggalBaru = $tanggalUpdate->copy()->addMonths($i)->day(5);
+                                $namaBulanBaru = $tanggalBaru->translatedFormat('F Y');
+                                $namaIuranBaru = 'Uang SPP / Bulan - ' . $namaBulanBaru;
+
+                                $tagihanBaru = Tagihan::create([
+                                    'nis'          => $detail->tagihan->nis,
+                                    'nama_tagihan' => $namaIuranBaru,
+                                    'jatuh_tempo'  => $tanggalBaru->format('Y-m-d'),
+                                ]);
+
+                                DetailTagihan::create([
+                                    'id_tagihan'     => $tagihanBaru->id_tagihan,
+                                    'id_siswa'       => $detail->id_siswa,
+                                    'nama_iuran'     => $namaIuranBaru,
+                                    'jumlah_bayar'   => $detail->jumlah_bayar,
+                                    'sisa_tagihan'   => $detail->jumlah_bayar,
+                                    'status_tagihan' => 'Menunggu Verifikasi',
+                                    'bukti_bayar'    => $pathBukti 
+                                ]);
+                            }
+                        }
                     }
                 }
             }
-        }
+        });
 
         return back()->with('sukses', 'Bukti pembayaran berhasil dikirim!');
     }

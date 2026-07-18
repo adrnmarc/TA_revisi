@@ -87,8 +87,9 @@
                                     <span class="text-xs text-amber-600 font-semibold block">(Cicilan Ke-{{ $tagihan->detailTagihan->cicilan_ke }})</span>
                                 @endif
                             </td>
-                            <td class="py-4 px-6 text-xs text-slate-400 font-normal">
-                                {{ \Carbon\Carbon::parse($tagihan->jatuh_tempo ?? $tagihan->created_at)->format('d M Y') }}
+                           <td class="py-4 px-6">
+                                <span class="block text-xs font-bold text-slate-700">{{ \Carbon\Carbon::parse($tagihan->created_at)->format('d M Y') }}</span>
+                                <span class="block text-[10px] font-semibold text-red-500 mt-1">Tempo: {{ \Carbon\Carbon::parse($tagihan->jatuh_tempo)->format('d M Y') }}</span>
                             </td>
                             <td class="py-4 px-6 text-slate-900 font-semibold">
                                 Rp {{ number_format(optional($tagihan->detailTagihan)->jumlah_bayar ?? 0, 0, ',', '.') }}
