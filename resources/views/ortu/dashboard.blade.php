@@ -4,7 +4,7 @@
 @section('content')
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght=500;600;700;800&family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap');
 
     .font-display { font-family: 'Baloo 2', system-ui, sans-serif; }
     .font-body    { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
@@ -69,13 +69,22 @@
 
         <div class="flex-1 p-6">
 
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <h3 class="font-display text-xl font-bold text-slate-800">
-                    {{ $siswa->nama }}
-                </h3>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                
+                {{-- Modifikasi Nama Lengkap & Nama Panggilan Anak --}}
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <h3 class="font-display text-xl font-bold text-slate-800">
+                        {{ $siswa->nama }}
+                    </h3>
+                    @if($siswa->nama_panggilan)
+                        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100 font-body">
+                            ({{ $siswa->nama_panggilan }})
+                        </span>
+                    @endif
+                </div>
 
                 <a href="/ortu/profil"
-                    class="text-sm font-semibold text-emerald-600 hover:underline">
+                    class="text-sm font-semibold text-emerald-600 hover:underline shrink-0">
                     Lihat Profil Lengkap →
                 </a>
             </div>

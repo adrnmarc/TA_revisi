@@ -99,7 +99,12 @@
                                 <div class="w-8 h-8 rounded-full {{ $warna }} font-display font-bold text-[10px] flex items-center justify-center shrink-0">
                                     {{ strtoupper(substr($siswa->nama,0,2)) }}
                                 </div>
-                                <span class="text-slate-900 font-bold">{{ $siswa->nama }}</span>
+                                <div class="flex flex-col">
+                                    <span class="text-slate-900 font-bold">{{ $siswa->nama }}</span>
+                                    @if($siswa->nama_panggilan)
+                                        <span class="text-xs text-slate-400">({{ $siswa->nama_panggilan }})</span>
+                                    @endif
+                                </div>
                             </div>
                         </td>
 
@@ -121,7 +126,7 @@
                             <div class="flex items-center justify-center gap-1">
 
                                 <button type="button"
-                                    onclick="openEditSiswaModal('{{ $siswa->id }}', '{{ $siswa->nis }}', '{{ $siswa->nama }}', '{{ $siswa->kelas }}', '{{ $siswa->wali }}', '{{ $siswa->nama_orangtua }}', '{{ $siswa->kontak }}', '{{ $siswa->jenis_kelamin }}', '{{ $siswa->tanggal_lahir }}', '{{ $siswa->alamat }}')"
+                                    onclick="openEditSiswaModal('{{ $siswa->id }}', '{{ $siswa->nis }}', '{{ $siswa->nama }}', '{{ $siswa->nama_panggilan }}', '{{ $siswa->kelas }}', '{{ $siswa->wali }}', '{{ $siswa->nama_orangtua }}', '{{ $siswa->kontak }}', '{{ $siswa->jenis_kelamin }}', '{{ $siswa->tanggal_lahir }}', '{{ $siswa->alamat }}')"
                                     class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
                                     <i data-lucide="pencil" class="w-4 h-4"></i>
                                 </button>
@@ -196,6 +201,12 @@
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Lengkap Siswa</label>
                     <input type="text" name="nama" required placeholder="Masukkan nama lengkap siswa"
+                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Panggilan</label>
+                    <input type="text" name="nama_panggilan" required placeholder="Masukkan nama panggilan siswa"
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
                 </div>
 
@@ -309,6 +320,12 @@
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Lengkap Siswa</label>
                     <input type="text" name="nama" id="edit_nama" required
+                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Panggilan</label>
+                    <input type="text" name="nama_panggilan" id="edit_nama_panggilan" required
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
                 </div>
 
@@ -475,10 +492,11 @@
     });
 
     // Fungsi Buka Modal Edit Siswa & Tarik Data Lama ke Kolom Input
-    function openEditSiswaModal(id, nis, nama, kelas, wali, nama_orangtua, kontak, jenis_kelamin, tanggal_lahir, alamat) {
+    function openEditSiswaModal(id, nis, nama, nama_panggilan, kelas, wali, nama_orangtua, kontak, jenis_kelamin, tanggal_lahir, alamat) {
         document.getElementById('formEditSiswa').action = '/admin/siswa/' + id;
         document.getElementById('edit_nis').value = nis;
         document.getElementById('edit_nama').value = nama;
+        document.getElementById('edit_nama_panggilan').value = nama_panggilan || '';
         document.getElementById('edit_kelas').value = kelas;
         document.getElementById('edit_wali').value = wali;
         document.getElementById('edit_nama_orangtua').value = nama_orangtua;

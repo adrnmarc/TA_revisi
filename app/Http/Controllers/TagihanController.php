@@ -38,7 +38,7 @@ class TagihanController extends Controller
     }
 
     /**
-     * Simpan tagihan baru (ADMIN) dengan Deteksi Status Double Billing
+     * Simpan tagihan baru (ADMIN) dengan Deteksi Cerdas Per Bulan
      */
     /**
      * Simpan tagihan baru (Satu Siswa atau Massal)
@@ -186,6 +186,15 @@ class TagihanController extends Controller
 
             $detail->update(['status_tagihan' => $statusFinal]);
             $detail->tagihan->update(['status' => $statusFinal]);
+
+            Pembayaran::create([
+                'id_detail' => $detail->id_detail,
+                'user_id' => Auth::id() ?? 1, 
+                'tanggal_bayar' => now(),
+                'jumlah_diterima' => $request->jumlah_bayar,
+                'status' => 'Disetujui',
+                'bukti_bayar' => $namaFileBukti,
+            ]);
         });
 
         return redirect()->back()->with('sukses', 'Pembayaran berhasil dicatat!');
@@ -256,9 +265,7 @@ class TagihanController extends Controller
             }
         });
 
-        return redirect()
-            ->back()
-            ->with('sukses', 'Tagihan berhasil diperbarui.');
+        return redirect()->back()->with('sukses', 'Tagihan berhasil diperbarui.');
     }
     /**
      * Hapus tagihan (ADMIN)
@@ -269,7 +276,6 @@ class TagihanController extends Controller
 
         DB::transaction(function () use ($tagihan) {
             $detail = DetailTagihan::where('id_tagihan', $tagihan->id_tagihan)->first();
-            
             if ($detail) {
                 $detail->pembayarans()->delete();
                 $detail->delete();
@@ -277,9 +283,7 @@ class TagihanController extends Controller
             $tagihan->delete();
         });
 
-        return redirect()
-            ->back()
-            ->with('sukses', 'Tagihan berhasil dihapus.');
+        return redirect()->back()->with('sukses', 'Tagihan berhasil dihapus.');
     }
 
     /**
