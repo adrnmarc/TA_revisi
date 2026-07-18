@@ -13,16 +13,17 @@ class Siswa extends Model
     protected $table = 'siswas';
 
     protected $fillable = [
-        'nis',
-        'nama',
-        'kelas',
-        'wali',
-        'kontak',
-        'password',
-        'nama_orangtua',
-        'jenis_kelamin',
-        'tanggal_lahir',
-        'alamat'
+    'nis',
+    'nama',
+    'nama_panggilan', // Tambahkan ini agar bisa disimpan lewat Laravel
+    'kelas',
+    'wali',
+    'kontak',
+    'nama_orangtua',
+    'jenis_kelamin',
+    'tanggal_lahir',
+    'alamat',
+    'password',
     ];
 
     /**

@@ -39,7 +39,7 @@ class TagihanController extends Controller
     }
 
     /**
-     * Simpan tagihan baru (ADMIN) dengan Deteksi Status Double Billing
+     * Simpan tagihan baru (ADMIN) dengan Deteksi Cerdas Per Bulan
      */
     public function store(Request $request)
     {
@@ -53,22 +53,40 @@ class TagihanController extends Controller
         $siswa = Siswa::where('nis', $request->siswa_id)->firstOrFail();
         $kategori = KategoriTagihan::findOrFail($request->kategori_tagihan_id);
 
-        // 1. LOGIKA NAMA BULAN OTOMATIS UNTUK SPP
+        // 1. FORMAT NAMA TAGIHAN (Hanya SPP yang digabungkan dengan nama bulan secara visual)
         $namaTagihan = $kategori->nama_kategori;
         if (str_contains(strtolower($namaTagihan), 'spp')) {
             $bulanTahun = Carbon::parse($request->tanggal_tagihan)->translatedFormat('F Y');
             $namaTagihan = $namaTagihan . ' - ' . $bulanTahun;
         }
 
-        // 2. LOGIKA DETEKSI ERROR SPESIFIK (DOUBLE BILLING)
-        $tagihanTerdaftar = DetailTagihan::where('id_siswa', $siswa->id)
-                            ->where('nama_iuran', $namaTagihan)
-                            ->first();
+        // 2. LOGIKA DETEKSI DOUBLE BILLING BERDASARKAN KONDISI KATEGORI
+        $tanggalInput = Carbon::parse($request->tanggal_tagihan);
+        
+        // Query dasar pencarian tagihan dengan nama iuran yang sama pada siswa tersebut
+        $queryCek = DetailTagihan::where('id_siswa', $siswa->id)
+                                 ->where('nama_iuran', $namaTagihan);
+
+        // KONDISI: Jika BUKAN "Uang Program", validasi dikunci per bulan & tahun inputan
+        if (!str_contains(strtolower($kategori->nama_kategori), 'program')) {
+            $queryCek->whereHas('tagihan', function ($query) use ($tanggalInput) {
+                $query->whereMonth('jatuh_tempo', $tanggalInput->month)
+                      ->whereYear('jatuh_tempo', $tanggalInput->year);
+            });
+        }
+
+        $tagihanTerdaftar = $queryCek->first();
 
         if ($tagihanTerdaftar) {
-            $pesan = $tagihanTerdaftar->status_tagihan === 'Lunas'
-                ? 'Gagal! Tagihan "' . $namaTagihan . '" untuk ' . $siswa->nama . ' tidak bisa ditambahkan karena sudah dibayar/lunas.'
-                : 'Gagal! Siswa ' . $siswa->nama . ' sudah memiliki tagihan aktif untuk "' . $namaTagihan . '".';
+            // Jika kategori yang melanggar adalah Uang Program
+            if (str_contains(strtolower($kategori->nama_kategori), 'program')) {
+                $pesan = 'Gagal! Tagihan "' . $namaTagihan . '" untuk ' . $siswa->nama . ' hanya boleh dibayarkan sekali saja dan sudah terdaftar sebelumnya.';
+            } else {
+                // Jika kategori bulanan biasa (MMP, Ekskul, POMG, dll)
+                $pesan = $tagihanTerdaftar->status_tagihan === 'Lunas'
+                    ? 'Gagal! Tagihan "' . $namaTagihan . '" untuk ' . $siswa->nama . ' tidak bisa ditambahkan karena sudah dibayar/lunas pada bulan ini.'
+                    : 'Gagal! Siswa ' . $siswa->nama . ' sudah memiliki tagihan aktif untuk "' . $namaTagihan . '" pada bulan ini.';
+            }
 
             return redirect()->back()->withInput()->with('error', $pesan);
         }
@@ -109,13 +127,12 @@ class TagihanController extends Controller
         ]);
 
         $detail = DetailTagihan::with('tagihan.kategoriTagihan')->findOrFail($id_detail);
-        $sisaSebelumnya = $detail->sisa_tagihan; // Menggunakan accessor dari model DetailTagihan
+        $sisaSebelumnya = $detail->sisa_tagihan; 
 
         if ($request->jumlah_bayar > $sisaSebelumnya) {
             return redirect()->back()->with('error', 'Jumlah bayar melebihi sisa tagihan! Sisa saat ini: Rp ' . number_format($sisaSebelumnya, 0, ',', '.'));
         }
 
-        // Simpan Bukti Pembayaran jika diunggah
         $namaFileBukti = null;
         if ($request->hasFile('bukti_bayar')) {
             $file = $request->file('bukti_bayar');
@@ -124,21 +141,9 @@ class TagihanController extends Controller
         }
 
         DB::transaction(function () use ($detail, $request, $namaFileBukti) {
-            // 1. Simpan baris transaksi ke tabel pembayarans
-            Pembayaran::create([
-                'id_detail' => $detail->id_detail,
-                'user_id' => Auth::id() ?? 1, // Jika tidak ter-auth, fallback ke ID 1 (Admin default)
-                'tanggal_bayar' => now(),
-                'jumlah_diterima' => $request->jumlah_bayar,
-                'status' => 'Disetujui',
-                'bukti_bayar' => $namaFileBukti,
-            ]);
-
-            // 2. Hitung total yang sudah dibayar (Termasuk pembayaran baru)
             $totalBayarMasuk = $detail->pembayarans()->sum('jumlah_diterima') + $request->jumlah_bayar;
             $sisaBaru = $detail->jumlah_bayar - $totalBayarMasuk;
 
-            // 3. Tentukan status baru
             $statusFinal = 'Belum Lunas';
             if ($sisaBaru <= 0) {
                 $statusFinal = 'Lunas';
@@ -146,9 +151,17 @@ class TagihanController extends Controller
                 $statusFinal = 'Dicicil';
             }
 
-            // 4. Update status ke DetailTagihan dan Tagihan induknya
             $detail->update(['status_tagihan' => $statusFinal]);
             $detail->tagihan->update(['status' => $statusFinal]);
+
+            Pembayaran::create([
+                'id_detail' => $detail->id_detail,
+                'user_id' => Auth::id() ?? 1, 
+                'tanggal_bayar' => now(),
+                'jumlah_diterima' => $request->jumlah_bayar,
+                'status' => 'Disetujui',
+                'bukti_bayar' => $namaFileBukti,
+            ]);
         });
 
         return redirect()->back()->with('sukses', 'Pembayaran berhasil dicatat!');
@@ -171,49 +184,58 @@ class TagihanController extends Controller
         $siswa = Siswa::where('nis', $request->siswa_id)->firstOrFail();
         $kategori = KategoriTagihan::findOrFail($request->kategori_tagihan_id);
 
-        // Mencegah duplikasi nama iuran iuran yang sama untuk siswa yang sama
-        $duplikat = DetailTagihan::where('id_siswa', $siswa->id)
-            ->where('nama_iuran', $kategori->nama_kategori)
-            ->where('id_tagihan', '!=', $id_tagihan)
-            ->exists();
-
-        if ($duplikat) {
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('error', 'Gagal! Siswa ' . $siswa->nama . ' sudah memiliki tagihan dengan nama "' . $kategori->nama_kategori . '".');
+        $namaTagihan = $kategori->nama_kategori;
+        if (str_contains(strtolower($namaTagihan), 'spp')) {
+            $bulanTahun = Carbon::parse($request->tanggal_tagihan)->translatedFormat('F Y');
+            $namaTagihan = $namaTagihan . ' - ' . $bulanTahun;
         }
 
-        DB::transaction(function () use ($tagihan, $siswa, $kategori, $request) {
-            // Update tabel tagihans induk
+        $tanggalInput = Carbon::parse($request->tanggal_tagihan);
+        $queryDuplikat = DetailTagihan::where('id_siswa', $siswa->id)
+            ->where('nama_iuran', $namaTagihan)
+            ->where('id_tagihan', '!=', $id_tagihan);
+
+        if (!str_contains(strtolower($kategori->nama_kategori), 'program')) {
+            $queryDuplikat->whereHas('tagihan', function ($query) use ($tanggalInput) {
+                $query->whereMonth('jatuh_tempo', $tanggalInput->month)
+                      ->whereYear('jatuh_tempo', $tanggalInput->year);
+            });
+        }
+
+        if ($queryDuplikat->exists()) {
+            $pesanError = str_contains(strtolower($kategori->nama_kategori), 'program')
+                ? 'Gagal! Siswa ' . $siswa->nama . ' sudah memiliki tagihan "' . $namaTagihan . '" sebelumnya.'
+                : 'Gagal! Siswa ' . $siswa->nama . ' sudah memiliki tagihan "' . $namaTagihan . '" pada bulan yang dipilih.';
+
+            return redirect()->back()->withInput()->with('error', $pesanError);
+        }
+
+        DB::transaction(function () use ($tagihan, $siswa, $kategori, $namaTagihan, $request) {
             $tagihan->update([
                 'kategori_tagihan_id' => $kategori->id,
                 'nis' => $siswa->nis,
-                'nama_tagihan' => $kategori->nama_kategori,
+                'nama_tagihan' => $namaTagihan,
                 'nominal' => $request->nominal,
                 'jatuh_tempo' => $request->tanggal_tagihan,
                 'status' => $request->status_tagihan,
             ]);
 
-            // Update tabel detail_tagihans anak
             $detail = DetailTagihan::where('id_tagihan', $tagihan->id_tagihan)->first();
             if ($detail) {
                 $detail->update([
                     'id_siswa' => $siswa->id,
-                    'nama_iuran' => $kategori->nama_kategori,
+                    'nama_iuran' => $namaTagihan,
                     'jumlah_bayar' => $request->nominal,
                     'status_tagihan' => $request->status_tagihan,
                 ]);
             }
         });
 
-        return redirect()
-            ->back()
-            ->with('sukses', 'Tagihan berhasil diperbarui.');
+        return redirect()->back()->with('sukses', 'Tagihan berhasil diperbarui.');
     }
 
     /**
-     * Hapus tagihan (ADMIN) beserta Detail dan Pembayarannya sekaligus
+     * Hapus tagihan (ADMIN)
      */
     public function destroy($id_tagihan)
     {
@@ -221,21 +243,14 @@ class TagihanController extends Controller
 
         DB::transaction(function () use ($tagihan) {
             $detail = DetailTagihan::where('id_tagihan', $tagihan->id_tagihan)->first();
-            
             if ($detail) {
-                // Hapus riwayat pembayarannya terlebih dahulu
                 $detail->pembayarans()->delete();
-                // Hapus detail tagihan
                 $detail->delete();
             }
-            
-            // Hapus tagihan induk
             $tagihan->delete();
         });
 
-        return redirect()
-            ->back()
-            ->with('sukses', 'Tagihan berhasil dihapus.');
+        return redirect()->back()->with('sukses', 'Tagihan berhasil dihapus.');
     }
 
     /**
@@ -261,13 +276,11 @@ class TagihanController extends Controller
 
         $siswaId = $siswaId ?? Siswa::value('id'); 
 
-        // Mengambil tagihan yang belum lunas (Belum Lunas & Dicicil)
         $tagihans = DetailTagihan::where('id_siswa', $siswaId)
             ->where('status_tagihan', '!=', 'Lunas')
             ->with(['tagihan.kategoriTagihan', 'pembayarans'])
             ->get();
 
-        // Mengambil tagihan yang sudah lunas
         $tagihanLunas = DetailTagihan::where('id_siswa', $siswaId)
             ->where('status_tagihan', 'Lunas')
             ->with(['tagihan.kategoriTagihan', 'pembayarans'])
