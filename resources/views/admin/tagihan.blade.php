@@ -114,13 +114,15 @@
                             </td>
                             <td class="py-4 px-6">
                                 <div class="flex items-center justify-center gap-2">
+                                    {{-- PERBAIKAN: Mengirim 2 data tanggal terpisah ke Javascript --}}
                                     <button type="button"
                                             class="btn-edit-tagihan p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                                             data-id="{{ $tagihan->id_tagihan }}"
                                             data-nis="{{ $tagihan->nis }}"
-                                            data-kategori-id="{{ $tagihan->kategori_tagihan_id }}"
+                                            data-kategori-id="{{ $tagihan->id_kategori }}"
                                             data-nominal="{{ optional($tagihan->detailTagihan)->jumlah_bayar ?? 0 }}"
-                                            data-tanggal="{{ \Carbon\Carbon::parse($tagihan->jatuh_tempo)->format('Y-m-d') }}"
+                                            data-tanggal-dibuat="{{ \Carbon\Carbon::parse($tagihan->created_at)->format('Y-m-d') }}"
+                                            data-jatuh-tempo="{{ \Carbon\Carbon::parse($tagihan->jatuh_tempo ?? $tagihan->created_at)->format('Y-m-d') }}"
                                             data-status="{{ optional($tagihan->detailTagihan)->status_tagihan ?? 'Belum Lunas' }}"
                                             data-cicilan="{{ optional($tagihan->detailTagihan)->cicilan_ke ?? '' }}">
                                         <i data-lucide="pencil" class="w-4 h-4"></i>
@@ -167,6 +169,7 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Pilih Siswa</label>
                     <select name="siswa_id" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="">-- Pilih Anak Didik --</option>
+                        <option value="all" class="font-bold text-blue-600">⭐⭐ BUAT UNTUK SEMUA SISWA ⭐⭐</option>
                         @foreach($daftarSiswa as $siswa)
                             <option value="{{ $siswa->nis }}">{{ $siswa->nama }} ({{ $siswa->kelas }})</option>
                         @endforeach
@@ -174,7 +177,7 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Tagihan (Kategori)</label>
-                    <select name="kategori_tagihan_id" id="buat_kategori_tagihan" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                    <select name="id_kategori" id="buat_kategori_tagihan" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="" disabled selected data-harga="">-- Pilih Kategori Tagihan --</option>
                         @foreach($daftarKategori as $kategori)
                             <option value="{{ $kategori->id }}" data-harga="{{ $kategori->harga_default }}">{{ $kategori->nama_kategori }}</option>
@@ -185,9 +188,16 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Nominal (Rupiah)</label>
                     <input type="number" name="nominal" id="buat_nominal" required placeholder="Contoh: 350000" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                 </div>
-                <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Tanggal Tagihan Dibuat</label>
-                    <input type="date" name="tanggal_tagihan" required value="{{ date('Y-m-d') }}" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Tanggal Dibuat</label>
+                        <input type="date" name="tanggal_tagihan" value="{{ date('Y-m-d') }}" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Jatuh Tempo <span class="text-red-500">*</span></label>
+                        <input type="date" name="jatuh_tempo" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 mt-4">
@@ -221,7 +231,7 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Tagihan (Kategori)</label>
-                    <select name="kategori_tagihan_id" id="edit_kategori_tagihan_id" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                    <select name="id_kategori" id="edit_kategori_tagihan_id" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         @foreach($daftarKategori as $kategori)
                             <option value="{{ $kategori->id }}" data-harga="{{ $kategori->harga_default }}">{{ $kategori->nama_kategori }}</option>
                         @endforeach
@@ -231,10 +241,19 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Nominal (Rupiah)</label>
                     <input type="number" name="nominal" id="edit_nominal" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                 </div>
-                <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Tanggal Tagihan</label>
-                    <input type="date" name="tanggal_tagihan" id="edit_tanggal_tagihan" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
+                
+                {{-- PERBAIKAN: Menambahkan ID edit_tanggal_tagihan dan edit_jatuh_tempo --}}
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Tanggal Dibuat</label>
+                        <input type="date" name="tanggal_tagihan" id="edit_tanggal_tagihan" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">Jatuh Tempo <span class="text-red-500">*</span></label>
+                        <input type="date" name="jatuh_tempo" id="edit_jatuh_tempo" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
                 </div>
+
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Status Pembayaran</label>
                     <select name="status_tagihan" id="edit_status_tagihan" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
@@ -350,7 +369,10 @@
                     document.getElementById('edit_siswa_id').value = this.getAttribute('data-nis');
                     document.getElementById('edit_kategori_tagihan_id').value = this.getAttribute('data-kategori-id');
                     document.getElementById('edit_nominal').value = this.getAttribute('data-nominal');
-                    document.getElementById('edit_tanggal_tagihan').value = this.getAttribute('data-tanggal');
+                    
+                    // PERBAIKAN: Me-mapping kedua data tanggal menggunakan ID yang benar
+                    document.getElementById('edit_tanggal_tagihan').value = this.getAttribute('data-tanggal-dibuat');
+                    document.getElementById('edit_jatuh_tempo').value = this.getAttribute('data-jatuh-tempo');
                     
                     const status = this.getAttribute('data-status');
                     document.getElementById('edit_status_tagihan').value = status;

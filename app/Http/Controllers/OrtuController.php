@@ -61,9 +61,11 @@ class OrtuController extends Controller
     {
         $siswaId = session('siswa_id');
         
+        // ==============================================================
+        // PERBAIKAN 1: Hapus ->withSum() dari sini
+        // ==============================================================
         $tagihans = DetailTagihan::where('id_siswa', $siswaId)
             ->with(['tagihan', 'pembayarans'])
-            ->withSum('pembayarans', 'jumlah_diterima')
             ->get();
 
         foreach ($tagihans as $tagihan) {
@@ -80,8 +82,14 @@ class OrtuController extends Controller
                 }
             }
 
-            // Hitung sisa tagihan
-            $totalTerbayar = $tagihan->pembayarans_sum_jumlah_diterima ?? 0;
+            // ==============================================================
+            // PERBAIKAN 2: Hitung sisa tagihan secara manual,
+            // dan ABAIKAN pembayaran yang statusnya "Ditolak"
+            // ==============================================================
+            $totalTerbayar = $tagihan->pembayarans
+                                     ->where('status', '!=', 'Ditolak')
+                                     ->sum('jumlah_diterima');
+                                     
             $tagihan->sisa_tagihan = $tagihan->jumlah_bayar - $totalTerbayar;
         }
 
@@ -108,8 +116,18 @@ class OrtuController extends Controller
             return redirect('/login-ortu')->with('gagal', 'Sesi Anda telah berakhir, silakan login kembali.');
         }
 
-        // Simpan file bukti pembayaran ke storage public
-        $pathBukti = $request->file('bukti_bayar')->store('bukti_bayar', 'public');
+        // ====================================================================
+        // PERBAIKAN DI SINI: Menyimpan langsung ke public/bukti_bayar tanpa storage
+        // ====================================================================
+        $file = $request->file('bukti_bayar');
+        $namaFileBukti = 'bukti_ortu_' . time() . '.' . $file->getClientOriginalExtension();
+        
+        // Pindahkan langsung ke folder public fisik
+        $file->move(public_path('bukti_bayar'), $namaFileBukti);
+        
+        // Bentuk path string untuk disimpan ke database
+        $pathBukti = 'bukti_bayar/' . $namaFileBukti;
+        // ====================================================================
 
         foreach ($request->tagihan_id as $id) {
             $detail = DetailTagihan::with('tagihan')->find($id);

@@ -4,18 +4,10 @@
 @section('page_title', 'Verifikasi Pembayaran')
 
 @section('content')
-    {{-- HAPUS SPINNER BAWAAN BROWSER --}}
     <style>
-        /* Chrome, Safari, Edge, Opera */
         input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        /* Firefox */
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
+        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
     </style>
 
     <p class="text-xs text-slate-400 -mt-5 mb-6">Sistem Informasi Pembayaran Keuangan Sekolah</p>
@@ -70,18 +62,23 @@
                                     </div>
                                 @endif
                             </td>
-                            
+                        
                             <td class="py-4 px-6">
                                 @php
                                     $bukti = $pembayaran->pembayarans->last()->bukti_bayar ?? $pembayaran->bukti_bayar;
                                 @endphp
 
                                 @if(!empty($bukti))
-                                    <a href="javascript:void(0)" onclick="openModal('{{ asset('storage/' . $bukti) }}')" class="text-blue-600 hover:underline font-bold text-xs">Lihat Bukti</a>
+                                    <a href="javascript:void(0)" 
+                                       onclick="openModal('{{ asset($bukti) }}')" 
+                                       class="text-blue-600 hover:underline font-bold text-xs">
+                                       Lihat Bukti
+                                    </a>
                                 @else
                                     <span class="text-slate-400 text-xs italic">Belum ada</span>
                                 @endif
                             </td>
+                            {{-- ========================================== --}}
 
                             <td class="py-4 px-6">
                                 <span class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 rounded-lg border border-rose-100">{{ $pembayaran->status_tagihan }}</span>
@@ -93,7 +90,6 @@
                                 @if(str_contains(strtolower($pembayaran->nama_iuran), 'program'))
                                     <form action="{{ route('pembayaran.konfirmasi', $pembayaran->id_detail) }}" method="POST" class="flex flex-col gap-1 items-center">
                                         @csrf
-                                        {{-- Input Nominal: spinner di-hide lewat CSS, min="1" ditambahkan untuk pengamanan HTML5 --}}
                                         <input type="number" name="jumlah_diterima" min="1" class="input-nominal-cicil w-24 border border-slate-300 rounded p-1 text-[10px] text-center focus:outline-none focus:border-emerald-600" placeholder="Nominal" required>
                                         <button type="submit" class="w-24 bg-emerald-600 hover:bg-emerald-700 text-white py-1 rounded text-[10px] font-bold transition cursor-pointer">CICIL</button>
                                     </form>
@@ -142,29 +138,28 @@
     </div>
     
     <div id="modalPreview" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4" onclick="closeModal()">
-        <div class="relative max-w-4xl w-full">
+        <div class="relative max-w-4xl w-full flex justify-center">
             <button onclick="closeModal()" class="absolute -top-10 right-0 text-white font-bold text-xl cursor-pointer">TUTUP [X]</button>
-            <img id="gambarPreview" src="" class="w-full h-auto rounded-lg shadow-2xl">
+            <img id="gambarPreview" src="" class="max-h-[90vh] max-w-full min-w-[300px] min-h-[300px] bg-white rounded-lg shadow-2xl object-contain">
         </div>
     </div>
 
     <script>
+        // KEMBALI MENGGUNAKAN URL BIASA, BUKAN BASE64
         function openModal(url) {
             document.getElementById('gambarPreview').src = url;
             document.getElementById('modalPreview').classList.remove('hidden');
         }
         function closeModal() {
             document.getElementById('modalPreview').classList.add('hidden');
+            document.getElementById('gambarPreview').src = '';
         }
 
-        // BLOKIR MANUAL KETIKAN MINUS (-), PLUS (+), DAN HURUF 'E'
         document.addEventListener("DOMContentLoaded", function() {
             const inputs = document.querySelectorAll('.input-nominal-cicil');
             inputs.forEach(input => {
                 input.addEventListener('keydown', function(e) {
-                    if (['e', 'E', '-', '+', ',', '.'].includes(e.key)) {
-                        e.preventDefault();
-                    }
+                    if (['e', 'E', '-', '+', ',', '.'].includes(e.key)) { e.preventDefault(); }
                 });
             });
         });

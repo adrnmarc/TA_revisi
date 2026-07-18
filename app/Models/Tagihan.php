@@ -14,12 +14,13 @@ class Tagihan extends Model
     public $incrementing = true;
 
     protected $fillable = [
-        'kategori_tagihan_id', // Menampung relasi kategori iuran
+        'id_kategori',
+        'id_siswa', 
+        'nis',   
         'nama_tagihan',
         'nominal',
         'jatuh_tempo',
         'status',
-        'nis',
     ];
 
     /**
@@ -27,7 +28,7 @@ class Tagihan extends Model
      */
     public function kategoriTagihan()
     {
-        return $this->belongsTo(KategoriTagihan::class, 'kategori_tagihan_id', 'id');
+        return $this->belongsTo(KategoriTagihan::class, 'id_kategori', 'id');
     }
 
     /**
@@ -35,7 +36,8 @@ class Tagihan extends Model
      */
     public function siswa()
     {
-        return $this->belongsTo(Siswa::class, 'nis', 'nis');
+        
+        return $this->belongsTo(Siswa::class, 'id_siswa', 'id');
     }
 
     /**
