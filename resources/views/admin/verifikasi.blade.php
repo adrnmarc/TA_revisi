@@ -97,11 +97,13 @@
             @csrf
             
             @if(str_contains(strtolower($pembayaran->nama_iuran), 'program'))
-                {{-- KHUSUS PROGRAM: Tampilkan input nominal (Otomatis dari Ortu, Admin bisa edit) --}}
-                <label class="text-[9px] text-slate-400">Nominal:</label>
+                {{-- KHUSUS PROGRAM: Nominal dikunci (read-only), sesuai klaim ortu.
+                     Admin TIDAK BISA mengubah angka ini — cuma bisa Konfirmasi atau Tolak.
+                     Nilai yang benar-benar disimpan tetap dikontrol di server (PembayaranController). --}}
+                <label class="text-[9px] text-slate-400">Nominal (Sesuai Klaim Ortu):</label>
                 <input type="number" name="jumlah_diterima" min="1" 
-                       value="{{ $nominalDiterima }}" 
-                       class="input-nominal-cicil w-24 border border-slate-300 rounded p-1 text-[10px] text-center focus:outline-none focus:border-emerald-600 mb-1" required>
+                       value="{{ $nominalDiterima }}" readonly tabindex="-1"
+                       class="input-nominal-cicil w-24 border border-slate-200 bg-slate-50 rounded p-1 text-[10px] text-center text-slate-500 cursor-not-allowed mb-1" required>
                 <button type="submit" class="w-24 bg-emerald-600 hover:bg-emerald-700 text-white py-1 rounded text-[10px] font-bold transition cursor-pointer">KONFIRMASI</button>
             
             @else
@@ -160,14 +162,5 @@
             document.getElementById('modalPreview').classList.add('hidden');
             document.getElementById('gambarPreview').src = '';
         }
-
-        document.addEventListener("DOMContentLoaded", function() {
-            const inputs = document.querySelectorAll('.input-nominal-cicil');
-            inputs.forEach(input => {
-                input.addEventListener('keydown', function(e) {
-                    if (['e', 'E', '-', '+', ',', '.'].includes(e.key)) { e.preventDefault(); }
-                });
-            });
-        });
     </script>
 @endsection

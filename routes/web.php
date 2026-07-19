@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
     LoginController, OrtuController, SiswaController, 
     TagihanController, LaporanController, PengumumanController, 
-    PembayaranController, ProfilAnakController, RiwayatPembayaranController
+    PembayaranController, ProfilAnakController, RiwayatPembayaranController,
+    KategoriTagihanController
 };
 use App\Http\Middleware\CheckAdminLogin;
 
@@ -15,11 +16,12 @@ Route::get('/', [PengumumanController::class, 'landingPage']);
 // Login Admin
 Route::get('/login', function () { return view('admin.login'); })->name('login');
 Route::post('/login', [LoginController::class, 'loginAdmin']); 
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::post('/logout', [LoginController::class, 'logoutAdmin'])->name('logout');
 
 // Login Ortu 
 Route::get('/login-ortu', function () { return view('ortu.login'); });
 Route::post('/login-ortu', [LoginController::class, 'loginOrtu']); 
+Route::post('/logout-ortu', [LoginController::class, 'logoutOrtu'])->name('logout.ortu');
 
 
 // --- 3. RUTE ORANG TUA ---
@@ -59,6 +61,12 @@ Route::middleware([CheckAdminLogin::class])->group(function () {
     Route::post('/admin/tagihan', [TagihanController::class, 'store']);
     Route::put('/admin/tagihan/{id}', [TagihanController::class, 'update']);
     Route::delete('/admin/tagihan/{id}', [TagihanController::class, 'destroy']);
+
+    // ===== TAMBAHAN BARU: Kelola Kategori Tagihan =====
+    Route::get('/admin/kategori', [KategoriTagihanController::class, 'index'])->name('kategori.index');
+    Route::post('/admin/kategori', [KategoriTagihanController::class, 'store'])->name('kategori.store');
+    Route::delete('/admin/kategori/{id}', [KategoriTagihanController::class, 'destroy'])->name('kategori.destroy');
+    // ===================================================
 
     // Verifikasi Pembayaran
     Route::post('/admin/pembayaran/konfirmasi/{id}', [PembayaranController::class, 'konfirmasiLunas'])->name('pembayaran.konfirmasi');

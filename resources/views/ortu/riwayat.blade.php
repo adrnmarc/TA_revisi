@@ -52,7 +52,7 @@
                     @if($item->status_tagihan == 'Lunas')
                         <span class="px-3 py-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-full border border-emerald-200">LUNAS</span>
                     @else
-                        <span class="px-3 py-1 text-[10px] font-bold text-amber-700 bg-amber-100 rounded-full border border-amber-200">VERIFIKASI</span>
+                        <span class="px-3 py-1 text-[10px] font-bold text-amber-700 bg-red-100 rounded-full border border-amber-200">BELUM LUNAS</span>
                     @endif
                 </td>
             </tr>

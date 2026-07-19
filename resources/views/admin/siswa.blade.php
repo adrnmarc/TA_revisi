@@ -239,21 +239,7 @@
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
                 </div>
 
-                <div class="pt-2 border-t border-slate-100">
-                    <p class="text-[11px] font-bold text-slate-400 uppercase mb-3 mt-3">Akun Login Orang Tua</p>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Password Login Orang Tua</label>
-                    <input type="password" name="password" required minlength="6" placeholder="Minimal 6 karakter"
-                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Konfirmasi Password</label>
-                    <input type="password" name="password_confirmation" required minlength="6" placeholder="Ulangi password"
-                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
-                </div>
+                
 
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Kelamin</label>
@@ -385,22 +371,7 @@
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all resize-none"></textarea>
                 </div>
 
-                <div class="pt-2 border-t border-slate-100">
-                    <p class="text-[11px] font-bold text-slate-400 uppercase mb-3 mt-3">Akun Login Orang Tua</p>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Password Baru</label>
-                    <input type="password" name="password" placeholder="Kosongkan jika tidak ingin mengganti password"
-                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
-                    <p class="text-[11px] text-slate-400 mt-1">Isi hanya jika ingin mengganti password akun orang tua.</p>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Konfirmasi Password Baru</label>
-                    <input type="password" name="password_confirmation" placeholder="Ulangi password baru"
-                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
-                </div>
+                
 
                 <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 mt-4">
                     <button type="button" onclick="closeEditSiswaModal()" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">Batal</button>

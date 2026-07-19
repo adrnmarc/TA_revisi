@@ -55,7 +55,7 @@
     {{-- Form Utama Pembayaran --}}
     <form id="form-pembayaran" action="{{ url('ortu/bayar-banyak') }}" method="POST" enctype="multipart/form-data">
         @csrf
-        
+
         <h3 class="text-xl font-bold text-gray-800 mb-6">Tagihan Aktif</h3>
 
         @if($tagihans->isEmpty())
@@ -69,7 +69,7 @@
                         $namaIuranLower = strtolower($tagihan->nama_iuran);
                         $isSpp = \Illuminate\Support\Str::contains($namaIuranLower, 'spp');
                         $isProgram = \Illuminate\Support\Str::contains($namaIuranLower, 'program') || \Illuminate\Support\Str::contains($namaIuranLower, 'sekolah');
-                        
+
                         $totalTerbayarValid = $tagihan->pembayarans->where('status', '!=', 'Ditolak')->sum('jumlah_diterima');
                         $sisaReal = $tagihan->jumlah_bayar - $totalTerbayarValid;
 
@@ -77,6 +77,9 @@
                         $sudahDicicil = isset($tagihan->pembayarans) ? $tagihan->pembayarans->where('status', 'Diterima')->count() : 0;
                         $sisaSlotCicilan = $maxCicilan - $sudahDicicil;
                         $rekomendasiCicilan = ($sisaSlotCicilan > 0) ? ceil($sisaReal / $sisaSlotCicilan) : $sisaReal;
+
+                        // Ada pembayaran (cicilan atau pelunasan) yang masih menunggu dicek admin?
+                        $adaPembayaranPending = $tagihan->pembayarans->where('status', 'Menunggu Verifikasi')->isNotEmpty();
                     @endphp
 
                     <div class="bg-white rounded-2xl border-2 border-gray-100 p-6 shadow-sm hover:shadow-md transition duration-300 relative">
@@ -87,7 +90,7 @@
                                     Jatuh Tempo: {{ $tagihan->tagihan ? \Carbon\Carbon::parse($tagihan->tagihan->jatuh_tempo)->translatedFormat('d M Y') : '-' }}
                                 </span>
                             </div>
-                            
+
                             @if($tagihan->status_tagihan == 'Belum Lunas')
                                 <span class="shrink-0 whitespace-nowrap bg-red-50 text-red-600 text-[10px] px-2.5 py-1.5 rounded-full font-bold border border-red-100 tracking-wide">BELUM LUNAS</span>
                             @elseif(strtolower($tagihan->status_tagihan) == 'ditolak')
@@ -104,7 +107,7 @@
                             <h5 class="text-2xl font-black text-gray-800 mt-1">Rp {{ number_format($sisaReal, 0, ',', '.') }}</h5>
                         </div>
 
-                        {{-- Bagian Menunggu Verifikasi --}}
+                        {{-- Bagian Menunggu Verifikasi (Pelunasan penuh) --}}
                         @if($tagihan->status_tagihan == 'Menunggu Verifikasi')
                             <div class="bg-amber-50 rounded-xl p-4 mt-6 border border-amber-200 text-center shadow-inner">
                                 <svg class="mx-auto h-8 w-8 text-amber-500 mb-2 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -112,6 +115,23 @@
                                 </svg>
                                 <h6 class="text-sm font-bold text-amber-800">Sedang Diverifikasi</h6>
                                 <p class="text-[11px] text-amber-600 mt-1 font-medium">Pembayaran Anda sedang dicek oleh Admin.</p>
+                            </div>
+
+                        {{-- Bagian Cicilan Baru Masuk, Menunggu Dicek Admin, Tapi Belum Lunas --}}
+                        @elseif($adaPembayaranPending)
+                            <div class="bg-amber-50 rounded-xl p-4 mt-6 border border-amber-200 text-center shadow-inner">
+                                <svg class="mx-auto h-8 w-8 text-amber-500 mb-2 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h6 class="text-sm font-bold text-amber-800">Cicilan Sedang Dicek Admin</h6>
+                                <p class="text-[11px] text-amber-600 mt-1 font-medium">
+                                    Setelah disetujui, sisa tagihan Anda akan berkurang.
+                                </p>
+                                @if($isProgram && $sisaSlotCicilan > 0)
+                                    <p class="text-[11px] text-amber-700 mt-2 font-bold">
+                                        Sisa maksimal {{ $sisaSlotCicilan }}x cicilan lagi untuk melunasi.
+                                    </p>
+                                @endif
                             </div>
                         @else
                             {{-- Status Ditolak --}}
@@ -135,11 +155,21 @@
                                 </div>
                             @endif
 
+                            {{-- Info Sisa Cicilan (Khusus Program, jika sudah pernah dicicil) --}}
+                            @if($isProgram && $sudahDicicil > 0 && $sisaReal > 0)
+                                <div class="bg-blue-50 rounded-xl p-3 mt-4 border border-blue-100 text-center">
+                                    <p class="text-[11px] text-blue-700 font-bold">
+                                        Sudah dicicil {{ $sudahDicicil }}x dari maksimal {{ $maxCicilan }}x.
+                                        Sisa {{ $sisaSlotCicilan }}x cicilan lagi untuk melunasi.
+                                    </p>
+                                </div>
+                            @endif
+
                             {{-- Form Input --}}
                             <div class="bg-blue-50/50 rounded-xl p-4 mt-4 border border-blue-100/50 relative">
                                 <label class="flex items-center space-x-3 cursor-pointer">
-                                    <input type="checkbox" name="tagihan_id[]" value="{{ $tagihan->id_detail }}" 
-                                           class="tagihan-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5 transition" 
+                                    <input type="checkbox" name="tagihan_id[]" value="{{ $tagihan->id_detail }}"
+                                           class="tagihan-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5 transition"
                                            data-sisa="{{ $sisaReal }}"
                                            data-is-spp="{{ $isSpp ? 'true' : 'false' }}"
                                            data-id="{{ $tagihan->id_detail }}">
@@ -166,42 +196,42 @@
                                     <label class="block font-bold text-[10px] text-blue-900 mb-2 uppercase tracking-wider">
                                         Nominal yang akan dibayar:
                                     </label>
-                                    
-                                    <input type="number" 
+
+                                    <input type="number"
                                            id="input_nominal_{{ $tagihan->id_detail }}"
-                                           name="nominal_bayar[{{ $tagihan->id_detail }}]" 
-                                           value="{{ $isProgram ? $rekomendasiCicilan : $sisaReal }}" 
+                                           name="nominal_bayar[{{ $tagihan->id_detail }}]"
+                                           value="{{ $isProgram ? $rekomendasiCicilan : $sisaReal }}"
                                            max="{{ $sisaReal }}"
                                            min="{{ $isProgram ? '1000' : $sisaReal }}"
                                            {{ !$isProgram ? 'readonly' : '' }}
                                            class="input-nominal-bayar w-full {{ !$isProgram ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white border-blue-300 text-blue-800 shadow-sm' }} px-3.5 py-2.5 rounded-lg font-bold text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                                            placeholder="Ketik nominal transfer...">
-                                
+
                                     @if($isProgram)
                                         <div class="mt-3">
                                             <p class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded inline-block border border-blue-100">
                                                 ℹ️ Maksimal Cicilan: 3 Kali
                                             </p>
                                         </div>
-                                    @endif       
+                                    @endif
                                     <div class="flex gap-2 mt-3 flex-wrap">
                                         {{-- Tombol Cicilan (Hanya untuk Program) --}}
                                         @if($isProgram)
-                                            <button type="button" 
-                                                    onclick="aktifkanInput('{{ $tagihan->id_detail }}'); setNominalX('{{ $tagihan->id_detail }}', {{ $rekomendasiCicilan }})" 
+                                            <button type="button"
+                                                    onclick="aktifkanInput('{{ $tagihan->id_detail }}'); setNominalX('{{ $tagihan->id_detail }}', {{ $rekomendasiCicilan }})"
                                                     class="flex-1 bg-blue-100/70 text-blue-700 text-[10px] px-2 py-2 rounded border border-blue-200 hover:bg-blue-200 transition font-bold uppercase tracking-wider text-center">
                                                  CICILAN
                                             </button>
                                         @endif
-                                        
-                                        <button type="button" 
+
+                                        <button type="button"
                                                 id="btn_lunas_{{ $tagihan->id_detail }}"
-                                                onclick="setNominalX('{{ $tagihan->id_detail }}', {{ $sisaReal }})" 
+                                                onclick="setNominalX('{{ $tagihan->id_detail }}', {{ $sisaReal }})"
                                                 class="flex-1 bg-emerald-100 text-emerald-700 text-[10px] px-2 py-2 rounded border border-emerald-200 hover:bg-emerald-200 transition font-bold uppercase tracking-wider text-center">
                                              Lunas (Rp {{ number_format($sisaReal, 0, ',', '.') }})
                                         </button>
                                     </div>
-                                    
+
                                     @if(!$isProgram)
                                         <div class="mt-3 flex items-start space-x-1">
                                             <svg class="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -338,7 +368,7 @@
             const idDetail = checkbox.getAttribute('data-id');
             const wrapper = document.getElementById(`wrapper-nominal-${idDetail}`);
             const inputNominal = document.getElementById(`input_nominal_${idDetail}`);
-            
+
             if (checkbox.checked) {
                 wrapper.classList.remove('hidden');
                 setTimeout(() => {
@@ -368,7 +398,7 @@
         const input = document.getElementById(`input_nominal_${id}`);
         const errorMsg = document.getElementById(`error_${id}`);
         const maxVal = parseFloat(input.getAttribute('max'));
-        
+
         // Biarkan user mengetik, kita hanya mengecek apakah angkanya valid
         if (input.value !== "" && parseFloat(input.value) > maxVal) {
             input.value = maxVal; // Hanya batasi jika melebihi sisa tagihan
@@ -381,7 +411,7 @@
         } else {
             errorMsg.classList.add('hidden');
         }
-        
+
         window.hitungTotalBayar();
     }
 
@@ -448,7 +478,7 @@
             alert('Silakan pilih minimal satu tagihan yang ingin dibayar!');
             return;
         }
-        
+
         const total = window.hitungTotalBayar();
         if (total <= 0) {
             alert('Total pembayaran tidak valid atau Rp 0.');
@@ -457,10 +487,10 @@
 
         const modal = document.getElementById('modal-pembayaran');
         const modalContent = document.getElementById('modal-content');
-        
+
         modal.classList.remove('hidden');
-        void modal.offsetWidth; 
-        
+        void modal.offsetWidth;
+
         modal.classList.remove('opacity-0');
         modalContent.classList.remove('scale-95');
         modalContent.classList.add('scale-100');
@@ -469,11 +499,11 @@
     function tutupModalKonfirmasi() {
         const modal = document.getElementById('modal-pembayaran');
         const modalContent = document.getElementById('modal-content');
-        
+
         modal.classList.add('opacity-0');
         modalContent.classList.remove('scale-100');
         modalContent.classList.add('scale-95');
-        
+
         setTimeout(() => {
             modal.classList.add('hidden');
         }, 300);

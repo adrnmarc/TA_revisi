@@ -30,47 +30,46 @@ class PembayaranController extends Controller
     public function konfirmasiLunas(Request $request, $id)
     {
         $detail = DetailTagihan::findOrFail($id);
-        
+
         // 1. Hitung uang yang BENAR-BENAR sudah masuk & disahkan (Abaikan yang pending/ditolak)
         $totalDiterimaSaja = Pembayaran::where('id_detail', $detail->id_detail)
             ->whereIn('status', ['Diterima', 'Lunas'])
             ->sum('jumlah_diterima');
-        
+
         $sisaTagihanAsli = $detail->jumlah_bayar - $totalDiterimaSaja;
 
-        // 2. Ambil nominal. Kalau form mengirim angka 0 (karena bug data lama), PAKSA sesuai sisa tagihannya.
-        $inputNominal = (float) $request->jumlah_diterima;
-        
-        if ($inputNominal <= 0) {
-            $pembayaranPending = Pembayaran::where('id_detail', $detail->id_detail)
-                ->where('status', 'Menunggu Verifikasi')
-                ->first();
-                
-            // === INI KUNCI PERBAIKANNYA (BYPASS DATA CACAT) ===
-            $inputNominal = ($pembayaranPending && $pembayaranPending->jumlah_diterima > 0) 
-                            ? (float) $pembayaranPending->jumlah_diterima 
-                            : $sisaTagihanAsli; 
-        }
-
-        // 3. Mencegah pelunasan jika tagihan memang sudah lunas 100% dari awal
-        if ($sisaTagihanAsli <= 0) {
-            return back()->with('gagal', 'Tagihan ini sebenarnya sudah lunas sepenuhnya.');
-        }
-
-        // 4. Cek agar tidak over-payment
-        if ($inputNominal > $sisaTagihanAsli) {
-            return back()->with('gagal', 'Nominal melebihi sisa tagihan! Sisa tagihan sebenarnya: Rp ' . number_format($sisaTagihanAsli, 0, ',', '.'));
-        }
-
-        // 5. UPDATE ATAU BUAT TRANSAKSI BARU YANG BERSIH
+        // ====================================================================
+        // KUNCI KEAMANAN: Nominal TIDAK diambil dari input form sama sekali.
+        // Admin tidak bisa mengubah nominal yang sebenarnya diklaim/ditransfer
+        // ortu, walau mencoba mengedit lewat DevTools browser.
+        // Nominal SELALU diambil dari data pembayaran yang di-submit ortu.
+        // ====================================================================
         $pembayaranPending = Pembayaran::where('id_detail', $detail->id_detail)
             ->where('status', 'Menunggu Verifikasi')
             ->first();
 
+        if ($pembayaranPending && $pembayaranPending->jumlah_diterima > 0) {
+            $inputNominal = (float) $pembayaranPending->jumlah_diterima;
+        } else {
+            // Fallback untuk data lama yang cacat (tidak ada record pending valid)
+            $inputNominal = $sisaTagihanAsli;
+        }
+
+        // 2. Mencegah pelunasan jika tagihan memang sudah lunas 100% dari awal
+        if ($sisaTagihanAsli <= 0) {
+            return back()->with('gagal', 'Tagihan ini sebenarnya sudah lunas sepenuhnya.');
+        }
+
+        // 3. Cek agar tidak over-payment (jaga-jaga, seharusnya tidak akan terjadi)
+        if ($inputNominal > $sisaTagihanAsli) {
+            $inputNominal = $sisaTagihanAsli;
+        }
+
+        // 4. UPDATE TRANSAKSI PENDING JADI DITERIMA
         if ($pembayaranPending) {
             $pembayaranPending->update([
                 'status'          => 'Diterima',
-                'jumlah_diterima' => $inputNominal, // Nominal yang sudah dikoreksi otomatis
+                'jumlah_diterima' => $inputNominal,
                 'user_id'         => Auth::id() ?? 1,
                 'tanggal_bayar'   => now()->format('Y-m-d'),
             ]);
@@ -85,9 +84,9 @@ class PembayaranController extends Controller
             ]);
         }
 
-        // 6. HITUNG TOTAL KESELURUHAN & UPDATE STATUS TAGIHAN INDUK
+        // 5. HITUNG TOTAL KESELURUHAN & UPDATE STATUS TAGIHAN INDUK
         $totalSekarang = $totalDiterimaSaja + $inputNominal;
-        
+
         $detail->update([
             'status_tagihan' => ($totalSekarang >= $detail->jumlah_bayar) ? 'Lunas' : 'Mencicil',
             'bukti_bayar'    => null, // Bersihkan cache bukti bayar
@@ -100,13 +99,13 @@ class PembayaranController extends Controller
     {
         $request->validate(['alasan' => 'required|string']);
         $detail = DetailTagihan::findOrFail($id);
-        
+
         // Simpan alasan penolakan ke riwayat tanpa menghapus datanya
         Pembayaran::where('id_detail', $detail->id_detail)
             ->where('status', 'Menunggu Verifikasi')
             ->update([
                 'status' => 'Ditolak',
-                'keterangan' => $request->alasan 
+                'keterangan' => $request->alasan
             ]);
 
         // Hapus fisik foto di folder public agar memori server tidak penuh
@@ -118,16 +117,16 @@ class PembayaranController extends Controller
             if (!$fotoTerpakaiDiTempatLain) {
                 $filePath = public_path($detail->bukti_bayar);
                 if (file_exists($filePath) && is_file($filePath)) {
-                    @unlink($filePath); 
+                    @unlink($filePath);
                 }
             }
         }
 
         $detail->update([
-            'status_tagihan' => 'Ditolak', 
+            'status_tagihan' => 'Ditolak',
             'bukti_bayar' => null
         ]);
-        
+
         return back()->with('sukses', 'Pembayaran ditolak. Alasan berhasil dikirim ke Orang Tua.');
     }
 }
