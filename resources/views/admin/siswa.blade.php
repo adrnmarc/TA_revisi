@@ -82,11 +82,10 @@
                         $warna = $palet[crc32($siswa->nama) % count($palet)];
 
                         $kelasStyle = match(true) {
-                            str_contains($siswa->kelas, 'TK A - Kelompok 1') => 'bg-sky-50 text-sky-700',
-                            str_contains($siswa->kelas, 'TK A - Kelompok 2') => 'bg-sky-50 text-sky-700',
-                            str_contains($siswa->kelas, 'TK B - Kelompok 1') => 'bg-violet-50 text-violet-700',
-                            str_contains($siswa->kelas, 'TK B - Kelompok 2') => 'bg-violet-50 text-violet-700',
-                            default                                           => 'bg-slate-100 text-slate-700',
+                            str_contains($siswa->kelas, 'TK A')  => 'bg-sky-50 text-sky-700',
+                            str_contains($siswa->kelas, 'TK B1') => 'bg-violet-50 text-violet-700',
+                            str_contains($siswa->kelas, 'TK B2') => 'bg-fuchsia-50 text-fuchsia-700',
+                            default                                => 'bg-slate-100 text-slate-700',
                         };
                     @endphp
 
@@ -214,10 +213,9 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Kelas</label>
                     <select name="kelas" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="" disabled selected>-- Pilih Kelas --</option>
-                        <option value="TK A - Kelompok 1">TK A - Kelompok 1</option>
-                        <option value="TK A - Kelompok 2">TK A - Kelompok 2</option>
-                        <option value="TK B - Kelompok 1">TK B - Kelompok 1</option>
-                        <option value="TK B - Kelompok 2">TK B - Kelompok 2</option>
+                        <option value="TK A">TK A</option>
+                        <option value="TK B1">TK B1</option>
+                        <option value="TK B2">TK B2</option>
                     </select>
                 </div>
 
@@ -312,10 +310,9 @@
                     <select name="kelas" id="edit_kelas" required
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
                         <option value="" disabled selected>-- Pilih Kelas --</option>
-                        <option value="TK A - Kelompok 1">TK A - Kelompok 1</option>
-                        <option value="TK A - Kelompok 2">TK A - Kelompok 2</option>
-                        <option value="TK B - Kelompok 1">TK B - Kelompok 1</option>
-                        <option value="TK B - Kelompok 2">TK B - Kelompok 2</option>
+                        <option value="TK A">TK A</option>
+                        <option value="TK B1">TK B1</option>
+                        <option value="TK B2">TK B2</option>
                     </select>
                 </div>
 

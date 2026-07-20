@@ -250,7 +250,7 @@
                                 </h3>
 
                                 <p class="text-slate-500">
-                                    Playground, ruang kelas nyaman, CCTV dan ruang multimedia.
+                                    Playground, ruang musik, CCTV dan ruang audio visual.
                                 </p>
 
                             </div>
@@ -299,7 +299,7 @@
 
 <img
 src="{{ asset('images/tk-siswa_gambar.jpeg') }}"
-class="rounded-2xl shadow-2xl">
+class="rounded-3xl shadow-xl w-full h-[550px] object-cover">
 
 </div>
 
@@ -624,7 +624,7 @@ Rp150.000
 
 <li>✅ Pembelajaran</li>
 
-<li>✅ Kelomppok Belajar</li>
+<li>✅ Kelompok Belajar</li>
 
 <li>✅ Kegiatan</li>
 
