@@ -82,11 +82,11 @@
                         $warna = $palet[crc32($siswa->nama) % count($palet)];
 
                         $kelasStyle = match(true) {
-                            str_contains($siswa->kelas, 'TK A - Kelompok 1')      => 'bg-sky-50 text-sky-700',
-                            str_contains($siswa->kelas, 'TK A - Kelompok 2')      => 'bg-sky-50 text-sky-700',
-                            str_contains($siswa->kelas, 'TK B - Kelompok 1')      => 'bg-violet-50 text-violet-700',
-                            str_contains($siswa->kelas, 'TK B - Kelompok 2')      => 'bg-violet-50 text-violet-700',
-                            default                                   => 'bg-slate-100 text-slate-700',
+                            str_contains($siswa->kelas, 'TK A - Kelompok 1') => 'bg-sky-50 text-sky-700',
+                            str_contains($siswa->kelas, 'TK A - Kelompok 2') => 'bg-sky-50 text-sky-700',
+                            str_contains($siswa->kelas, 'TK B - Kelompok 1') => 'bg-violet-50 text-violet-700',
+                            str_contains($siswa->kelas, 'TK B - Kelompok 2') => 'bg-violet-50 text-violet-700',
+                            default                                           => 'bg-slate-100 text-slate-700',
                         };
                     @endphp
 
@@ -101,9 +101,6 @@
                                 </div>
                                 <div class="flex flex-col">
                                     <span class="text-slate-900 font-bold">{{ $siswa->nama }}</span>
-                                    @if($siswa->nama_panggilan)
-                                        <span class="text-xs text-slate-400">({{ $siswa->nama_panggilan }})</span>
-                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -126,8 +123,17 @@
                             <div class="flex items-center justify-center gap-1">
 
                                 <button type="button"
-                                    onclick="openEditSiswaModal('{{ $siswa->id }}', '{{ $siswa->nis }}', '{{ $siswa->nama }}', '{{ $siswa->nama_panggilan }}', '{{ $siswa->kelas }}', '{{ $siswa->wali }}', '{{ $siswa->nama_orangtua }}', '{{ $siswa->kontak }}', '{{ $siswa->jenis_kelamin }}', '{{ $siswa->tanggal_lahir }}', '{{ $siswa->alamat }}')"
-                                    class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
+                                    class="btn-edit-siswa p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                    data-id="{{ $siswa->id }}"
+                                    data-nis="{{ $siswa->nis }}"
+                                    data-nama="{{ $siswa->nama }}"
+                                    data-kelas="{{ $siswa->kelas }}"
+                                    data-wali="{{ $siswa->wali }}"
+                                    data-nama_orangtua="{{ $siswa->nama_orangtua }}"
+                                    data-kontak="{{ $siswa->kontak }}"
+                                    data-jenis_kelamin="{{ $siswa->jenis_kelamin }}"
+                                    data-tanggal_lahir="{{ $siswa->tanggal_lahir }}"
+                                    data-alamat="{{ $siswa->alamat }}">
                                     <i data-lucide="pencil" class="w-4 h-4"></i>
                                 </button>
 
@@ -205,12 +211,6 @@
                 </div>
 
                 <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Panggilan</label>
-                    <input type="text" name="nama_panggilan" required placeholder="Masukkan nama panggilan siswa"
-                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
-                </div>
-
-                <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Kelas</label>
                     <select name="kelas" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="" disabled selected>-- Pilih Kelas --</option>
@@ -238,8 +238,6 @@
                     <input type="text" name="kontak" required placeholder="Contoh: 08123456789"
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
                 </div>
-
-                
 
                 <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Jenis Kelamin</label>
@@ -310,12 +308,6 @@
                 </div>
 
                 <div>
-                    <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Panggilan</label>
-                    <input type="text" name="nama_panggilan" id="edit_nama_panggilan" required
-                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
-                </div>
-
-                <div>
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Kelas</label>
                     <select name="kelas" id="edit_kelas" required
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
@@ -371,8 +363,6 @@
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all resize-none"></textarea>
                 </div>
 
-                
-
                 <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 mt-4">
                     <button type="button" onclick="closeEditSiswaModal()" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">Batal</button>
                     <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-md shadow-amber-100 transition-all">Simpan Perubahan</button>
@@ -384,7 +374,7 @@
 
 </div>
 
-{{-- SCRIPTS KONTROL JAVASCRIPT — logika tidak diubah, cuma baris ganjil di openEditSiswaModal dirapikan --}}
+{{-- SCRIPTS KONTROL JAVASCRIPT --}}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // Kontrol Modal Tambah Siswa
@@ -402,6 +392,25 @@
         if (btnBatalSiswa) {
             btnBatalSiswa.addEventListener('click', () => modalSiswa.classList.add('hidden'));
         }
+
+        // Click Listener untuk Ambil Data Attributes Tombol Edit Siswa
+        const tombolEdit = document.querySelectorAll('.btn-edit-siswa');
+        tombolEdit.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const nis = this.getAttribute('data-nis');
+                const nama = this.getAttribute('data-nama');
+                const kelas = this.getAttribute('data-kelas');
+                const wali = this.getAttribute('data-wali');
+                const nama_orangtua = this.getAttribute('data-nama_orangtua');
+                const kontak = this.getAttribute('data-kontak');
+                const jenis_kelamin = this.getAttribute('data-jenis_kelamin');
+                const tanggal_lahir = this.getAttribute('data-tanggal_lahir');
+                const alamat = this.getAttribute('data-alamat');
+
+                openEditSiswaModal(id, nis, nama, kelas, wali, nama_orangtua, kontak, jenis_kelamin, tanggal_lahir, alamat);
+            });
+        });
 
         // Live Search Sisi Klien untuk Tabel Siswa
         const inputCariSiswa = document.getElementById('inputCariSiswa');
@@ -463,11 +472,10 @@
     });
 
     // Fungsi Buka Modal Edit Siswa & Tarik Data Lama ke Kolom Input
-    function openEditSiswaModal(id, nis, nama, nama_panggilan, kelas, wali, nama_orangtua, kontak, jenis_kelamin, tanggal_lahir, alamat) {
+    function openEditSiswaModal(id, nis, nama, kelas, wali, nama_orangtua, kontak, jenis_kelamin, tanggal_lahir, alamat) {
         document.getElementById('formEditSiswa').action = '/admin/siswa/' + id;
         document.getElementById('edit_nis').value = nis;
         document.getElementById('edit_nama').value = nama;
-        document.getElementById('edit_nama_panggilan').value = nama_panggilan || '';
         document.getElementById('edit_kelas').value = kelas;
         document.getElementById('edit_wali').value = wali;
         document.getElementById('edit_nama_orangtua').value = nama_orangtua;

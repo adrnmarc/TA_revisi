@@ -15,15 +15,27 @@ class PembayaranController extends Controller
         $status = $request->get('status', 'semua');
         $query = DetailTagihan::query();
 
+        // Perbaikan logika filter menggunakan relasi tabel pembayarans
         if ($status === 'menunggu') {
-            $query->where('status_tagihan', 'Menunggu Verifikasi');
+            // Cari tagihan yang MEMILIKI pembayaran berstatus 'Menunggu Verifikasi'
+            $query->whereHas('pembayarans', function ($q) {
+                $q->where('status', 'Menunggu Verifikasi');
+            });
         } elseif ($status === 'disetujui') {
-            $query->where('status_tagihan', 'Lunas');
+            // Cari tagihan yang MEMILIKI pembayaran yang sudah disetujui ('Diterima')
+            $query->whereHas('pembayarans', function ($q) {
+                $q->where('status', 'Diterima');
+            });
         } elseif ($status === 'ditolak') {
-            $query->where('status_tagihan', 'Ditolak');
+            // Cari tagihan yang MEMILIKI pembayaran yang statusnya 'Ditolak'
+            $query->whereHas('pembayarans', function ($q) {
+                $q->where('status', 'Ditolak');
+            });
         }
 
-        $pembayarans = $query->with('siswa')->get();
+        // Eager load 'pembayarans' untuk performa yang lebih cepat (menghindari N+1 Query)
+        $pembayarans = $query->with(['siswa', 'pembayarans'])->latest()->get();
+        
         return view('admin.verifikasi', compact('pembayarans', 'status'));
     }
 
@@ -40,9 +52,6 @@ class PembayaranController extends Controller
 
         // ====================================================================
         // KUNCI KEAMANAN: Nominal TIDAK diambil dari input form sama sekali.
-        // Admin tidak bisa mengubah nominal yang sebenarnya diklaim/ditransfer
-        // ortu, walau mencoba mengedit lewat DevTools browser.
-        // Nominal SELALU diambil dari data pembayaran yang di-submit ortu.
         // ====================================================================
         $pembayaranPending = Pembayaran::where('id_detail', $detail->id_detail)
             ->where('status', 'Menunggu Verifikasi')
@@ -51,7 +60,6 @@ class PembayaranController extends Controller
         if ($pembayaranPending && $pembayaranPending->jumlah_diterima > 0) {
             $inputNominal = (float) $pembayaranPending->jumlah_diterima;
         } else {
-            // Fallback untuk data lama yang cacat (tidak ada record pending valid)
             $inputNominal = $sisaTagihanAsli;
         }
 
@@ -60,7 +68,7 @@ class PembayaranController extends Controller
             return back()->with('gagal', 'Tagihan ini sebenarnya sudah lunas sepenuhnya.');
         }
 
-        // 3. Cek agar tidak over-payment (jaga-jaga, seharusnya tidak akan terjadi)
+        // 3. Cek agar tidak over-payment
         if ($inputNominal > $sisaTagihanAsli) {
             $inputNominal = $sisaTagihanAsli;
         }
@@ -89,7 +97,7 @@ class PembayaranController extends Controller
 
         $detail->update([
             'status_tagihan' => ($totalSekarang >= $detail->jumlah_bayar) ? 'Lunas' : 'Mencicil',
-            'bukti_bayar'    => null, // Bersihkan cache bukti bayar
+            'bukti_bayar'    => null, 
         ]);
 
         return back()->with('sukses', 'Pembayaran sebesar Rp ' . number_format($inputNominal, 0, ',', '.') . ' berhasil diverifikasi!');
@@ -100,7 +108,6 @@ class PembayaranController extends Controller
         $request->validate(['alasan' => 'required|string']);
         $detail = DetailTagihan::findOrFail($id);
 
-        // Simpan alasan penolakan ke riwayat tanpa menghapus datanya
         Pembayaran::where('id_detail', $detail->id_detail)
             ->where('status', 'Menunggu Verifikasi')
             ->update([
@@ -108,7 +115,6 @@ class PembayaranController extends Controller
                 'keterangan' => $request->alasan
             ]);
 
-        // Hapus fisik foto di folder public agar memori server tidak penuh
         if ($detail->bukti_bayar) {
             $fotoTerpakaiDiTempatLain = DetailTagihan::where('bukti_bayar', $detail->bukti_bayar)
                                         ->where('id_detail', '!=', $id)

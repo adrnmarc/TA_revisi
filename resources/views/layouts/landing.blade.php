@@ -61,9 +61,7 @@
 
             <div class="flex items-center gap-3">
 
-                <div class="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
-                    TK
-                </div>
+                <img src="{{ asset('images/logo-TKMutiara.png') }}" class="w-16 h-16 object-contain" alt="Logo TK Mutiara Bogor">
 
                 <div>
                     <h1 class="font-bold text-2xl text-blue-700">
@@ -184,11 +182,14 @@
 
                         Hubungi Kami
 
+
                     </a>
 
                 </div>
 
             </div>
+
+
 
             <div>
 
@@ -286,76 +287,6 @@
 
 </section>
 
-<!-- ================= STATISTIK ================= -->
-
-<section class="py-20 bg-white">
-
-    <div class="max-w-7xl mx-auto px-8">
-
-        <div class="grid md:grid-cols-4 gap-8">
-
-            <div class="bg-blue-50 rounded-3xl p-8 text-center shadow-sm hover:shadow-lg transition">
-
-                <div class="text-5xl mb-4">👦</div>
-
-                <h2 class="text-5xl font-bold text-blue-600">
-                    120+
-                </h2>
-
-                <p class="mt-3 text-slate-600 font-medium">
-                    Siswa Aktif
-                </p>
-
-            </div>
-
-            <div class="bg-emerald-50 rounded-3xl p-8 text-center shadow-sm hover:shadow-lg transition">
-
-                <div class="text-5xl mb-4">👩‍🏫</div>
-
-                <h2 class="text-5xl font-bold text-emerald-600">
-                    20
-                </h2>
-
-                <p class="mt-3 text-slate-600 font-medium">
-                    Guru Profesional
-                </p>
-
-            </div>
-
-            <div class="bg-orange-50 rounded-3xl p-8 text-center shadow-sm hover:shadow-lg transition">
-
-                <div class="text-5xl mb-4">🏫</div>
-
-                <h2 class="text-5xl font-bold text-orange-500">
-                    12
-                </h2>
-
-                <p class="mt-3 text-slate-600 font-medium">
-                    Tahun Berdiri
-                </p>
-
-            </div>
-
-            <div class="bg-pink-50 rounded-3xl p-8 text-center shadow-sm hover:shadow-lg transition">
-
-                <div class="text-5xl mb-4">⭐</div>
-
-                <h2 class="text-5xl font-bold text-pink-500">
-                    98%
-                </h2>
-
-                <p class="mt-3 text-slate-600 font-medium">
-                    Kepuasan Orang Tua
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
 <!-- ================= TENTANG ================= -->
 
 <section id="tentang" class="py-24 bg-slate-50">
@@ -367,8 +298,8 @@
 <div>
 
 <img
-src="https://images.unsplash.com/photo-1588072432836-e10032774350?q=80&w=1200"
-class="rounded-3xl shadow-2xl">
+src="{{ asset('images/tk-siswa_gambar.jpeg') }}"
+class="rounded-2xl shadow-2xl">
 
 </div>
 
@@ -510,12 +441,7 @@ Visi
 
 <p class="leading-9">
 
-Menjadi lembaga pendidikan anak usia dini
-yang unggul dalam membentuk generasi
-yang cerdas, kreatif,
-berakhlak mulia,
-mandiri,
-dan berwawasan global.
+Menjadi sarana menyebarkan ilmu, menggali potensi demi pembentukan generasi yang cerdas , berahlak mulia dan Kreatif
 
 </p>
 
@@ -531,15 +457,11 @@ Misi
 
 <ul class="space-y-4 text-slate-600">
 
-<li>✅ Mengembangkan kemampuan akademik anak.</li>
+<li>✅ Menjadi Satuan Pendidikan  penyebar ilmu     sebagai  rujukan di Kota Bogor</li>
 
-<li>✅ Membentuk karakter positif.</li>
+<li>✅ Menciptakan  lingkungan belajar yang aman,nyaman, inklusif dan menyenangkan</li>
 
-<li>✅ Menanamkan nilai agama sejak dini.</li>
-
-<li>✅ Mengembangkan kreativitas anak.</li>
-
-<li>✅ Menjalin komunikasi aktif dengan orang tua.</li>
+<li>✅ Menggali potensi peserta didik menjadi generasi yang beriman, bertaqwa kepada Tuhan Yang Maha Esa, berakhlak Mulia, berkebhinekaan, bergotong royong, Mandiri, bernalar kritis dan kreatif.</li>
 
 </ul>
 
@@ -654,7 +576,7 @@ Biaya transparan tanpa biaya tersembunyi.
 
 <h3 class="text-2xl font-bold">
 
-Uang Pangkal
+Uang Program
 
 </h3>
 
@@ -666,13 +588,13 @@ Rp1.000.000
 
 <ul class="mt-8 space-y-3">
 
-<li>✅ Seragam</li>
+<li>✅ Kegiatan Hari Besar</li>
 
-<li>✅ Buku Paket</li>
+<li>✅ Manasik Haji</li>
 
-<li>✅ Tas Sekolah</li>
+<li>✅ Tes IQ</li>
 
-<li>✅ ATK</li>
+<li>✅ Field Trip</li>
 
 </ul>
 
@@ -694,7 +616,7 @@ SPP Bulanan
 
 <div class="text-5xl font-extrabold text-blue-600 mt-6">
 
-Rp350.000
+Rp150.000
 
 </div>
 
@@ -702,7 +624,7 @@ Rp350.000
 
 <li>✅ Pembelajaran</li>
 
-<li>✅ Snack</li>
+<li>✅ Kelomppok Belajar</li>
 
 <li>✅ Kegiatan</li>
 
@@ -728,7 +650,7 @@ Rp100.000
 
 <ul class="mt-8 space-y-3">
 
-<li>✅ Tari</li>
+<li>✅ Drumband</li>
 
 <li>✅ Mewarnai</li>
 
@@ -770,14 +692,14 @@ Dokumentasi kegiatan belajar.
 
 <div class="grid md:grid-cols-3 gap-8 mt-16">
 
-<img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=900"
-class="rounded-3xl shadow-xl hover:scale-105 transition duration-300">
+    <img src="{{ asset('images/tk-projectbelajar.jpeg') }}"
+        class="rounded-3xl shadow-xl hover:scale-105 transition duration-300" alt="Dokumentasi Belajar">
 
-<img src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?q=80&w=900"
-class="rounded-3xl shadow-xl hover:scale-105 transition duration-300">
+    <img src="{{ asset('images/tk-drumband.jpeg') }}"
+        class="rounded-3xl shadow-xl hover:scale-105 transition duration-300" alt="Kegiatan Drumband">
 
-<img src="https://images.unsplash.com/photo-1588072432836-e10032774350?q=80&w=900"
-class="rounded-3xl shadow-xl hover:scale-105 transition duration-300">
+    <img src="{{ asset('images/tk-kartini.jpeg') }}"
+        class="rounded-3xl shadow-xl hover:scale-105 transition duration-300" alt="Siswa Mewarnai">
 
 </div>
 
@@ -863,66 +785,80 @@ Silakan cek kembali nanti.
 
 </section>
 
-{{-- ================= TESTIMONI ================= --}}
-<section class="py-24 bg-slate-50">
+<!-- ================= KONTAK ================= -->
+<section id="kontak" class="py-24 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-8">
 
-    <div class="max-w-7xl mx-auto px-6">
-
-        <div class="text-center mb-16">
-
-            <h2 class="text-4xl font-bold text-slate-800">
-                Apa Kata Orang Tua?
+        <div class="text-center">
+            <h2 class="text-5xl font-bold text-slate-800">
+                Kontak Kami
             </h2>
-
-            <p class="text-slate-500 mt-3">
-                Kepuasan orang tua adalah motivasi kami untuk terus berkembang.
+            <p class="text-slate-500 mt-4">
+                Hubungi kami atau ikuti media sosial kami untuk informasi lebih lanjut.
             </p>
-
         </div>
 
-        <div class="grid md:grid-cols-3 gap-8">
+        <div class="grid md:grid-cols-3 gap-8 mt-16">
 
-            <div class="bg-white p-8 rounded-3xl shadow-lg hover:-translate-y-3 transition duration-300">
-                <div class="text-yellow-400 text-2xl">★★★★★</div>
-
-                <p class="mt-6 text-slate-600 leading-7 italic">
-                    "Guru sangat sabar membimbing anak. Perkembangan anak saya sangat pesat sejak masuk TK Mutiara."
-                </p>
-
-                <div class="mt-8">
-                    <h4 class="font-bold">Ibu Rina</h4>
-                    <p class="text-sm text-slate-400">
-                        Orang Tua Murid
+            <!-- Card WhatsApp -->
+            <div class="bg-white rounded-3xl shadow-lg p-8 hover:-translate-y-2 transition flex flex-col justify-between">
+                <div>
+                    <!-- Logo Link WhatsApp (Bisa Diklik Langsung) -->
+                    <a href="https://wa.me/6285716698823" target="_blank" 
+                       class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-emerald-100/50 hover:scale-110 transition-transform duration-200 cursor-pointer">
+                        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.444 5.703 1.445h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
+                    </a>
+                    
+                    <h3 class="text-2xl font-bold text-slate-800">
+                        WhatsApp
+                    </h3>
+                    <p class="mt-4 text-slate-600 leading-8">
+                        Layanan chat cepat untuk informasi pendaftaran, biaya, dan pertanyaan umum seputar sekolah.
                     </p>
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-3xl shadow-lg hover:-translate-y-3 transition duration-300">
-                <div class="text-yellow-400 text-2xl">★★★★★</div>
+            <!-- Card Instagram -->
+            <div class="bg-white rounded-3xl shadow-lg p-8 hover:-translate-y-2 transition flex flex-col justify-between">
+                <div>
+                    <!-- Logo Link Instagram (Bisa Diklik Langsung) -->
+                    <a href="https://www.instagram.com/tk_mutiara_bogor?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" 
+                       class="w-14 h-14 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-pink-100/50 hover:scale-110 transition-transform duration-200 cursor-pointer">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                    </a>
 
-                <p class="mt-6 text-slate-600 leading-7 italic">
-                    "Sistem pembayaran online sangat membantu. Semua transaksi menjadi lebih mudah dipantau."
-                </p>
-
-                <div class="mt-8">
-                    <h4 class="font-bold">Bapak Andi</h4>
-                    <p class="text-sm text-slate-400">
-                        Orang Tua Murid
+                    <h3 class="text-2xl font-bold text-slate-800">
+                        Instagram
+                    </h3>
+                    <p class="mt-4 text-slate-600 leading-8">
+                        Lihat keseruan dokumentasi kegiatan belajar-mengajar dan info pengumuman terbaru kami.
                     </p>
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-3xl shadow-lg hover:-translate-y-3 transition duration-300">
-                <div class="text-yellow-400 text-2xl">★★★★★</div>
+            <!-- Card Email -->
+            <div class="bg-white rounded-3xl shadow-lg p-8 hover:-translate-y-2 transition flex flex-col justify-between">
+                <div>
+                    <!-- Logo Link Email (Bisa Diklik Langsung) -->
+                    <a href="mailto:tkmutiarabogor@ymail.com" 
+                       class="w-14 h-14 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-sky-100/50 hover:scale-110 transition-transform duration-200 cursor-pointer">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </a>
 
-                <p class="mt-6 text-slate-600 leading-7 italic">
-                    "Lingkungan sekolah sangat bersih, aman, dan nyaman untuk anak-anak belajar."
-                </p>
-
-                <div class="mt-8">
-                    <h4 class="font-bold">Ibu Sinta</h4>
-                    <p class="text-sm text-slate-400">
-                        Orang Tua Murid
+                    <h3 class="text-2xl font-bold text-slate-800">
+                        Email Resmi
+                    </h3>
+                    <p class="mt-4 text-slate-600 leading-8">
+                        Kirimkan berkas kemitraan, surat administrasi resmi, maupun saran formal ke alamat email kami.
                     </p>
                 </div>
             </div>
@@ -930,6 +866,7 @@ Silakan cek kembali nanti.
         </div>
 
     </div>
+</section>
 
 </section>
 

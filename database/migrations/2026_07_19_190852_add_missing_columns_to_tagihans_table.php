@@ -12,10 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tagihans', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_kategori')->nullable()->after('id_tagihan');
-            $table->unsignedBigInteger('id_siswa')->nullable()->after('id_kategori');
-            $table->decimal('nominal', 15, 2)->default(0)->after('nama_tagihan');
-            $table->string('status')->default('Belum Lunas')->after('jatuh_tempo');
+            if (!Schema::hasColumn('tagihans', 'id_kategori')) {
+                $table->unsignedBigInteger('id_kategori')->nullable()->after('id_tagihan');
+            }
+            if (!Schema::hasColumn('tagihans', 'id_siswa')) {
+                $table->unsignedBigInteger('id_siswa')->nullable()->after('id_kategori');
+            }
+            if (!Schema::hasColumn('tagihans', 'nominal')) {
+                $table->decimal('nominal', 15, 2)->default(0)->after('nama_tagihan');
+            }
+            if (!Schema::hasColumn('tagihans', 'status')) {
+                $table->string('status')->default('Belum Lunas')->after('jatuh_tempo');
+            }
         });
     }
 
@@ -25,7 +33,16 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tagihans', function (Blueprint $table) {
-            $table->dropColumn(['id_kategori', 'id_siswa', 'nominal', 'status']);
+            $columnsToDrop = [];
+
+            if (Schema::hasColumn('tagihans', 'id_kategori')) $columnsToDrop[] = 'id_kategori';
+            if (Schema::hasColumn('tagihans', 'id_siswa')) $columnsToDrop[] = 'id_siswa';
+            if (Schema::hasColumn('tagihans', 'nominal')) $columnsToDrop[] = 'nominal';
+            if (Schema::hasColumn('tagihans', 'status')) $columnsToDrop[] = 'status';
+
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
     }
 };
