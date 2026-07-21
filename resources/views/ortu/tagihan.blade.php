@@ -171,6 +171,7 @@
                                     <input type="checkbox" name="tagihan_id[]" value="{{ $tagihan->id_detail }}"
                                            class="tagihan-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-5 w-5 transition"
                                            data-sisa="{{ $sisaReal }}"
+                                           data-harga-bulanan="{{ $tagihan->jumlah_bayar }}" 
                                            data-is-spp="{{ $isSpp ? 'true' : 'false' }}"
                                            data-id="{{ $tagihan->id_detail }}">
                                     <span class="text-sm font-bold text-blue-800 select-none">Pilih Tagihan Ini</span>
@@ -220,7 +221,7 @@
                                             <button type="button"
                                                     onclick="aktifkanInput('{{ $tagihan->id_detail }}'); setNominalX('{{ $tagihan->id_detail }}', {{ $rekomendasiCicilan }})"
                                                     class="flex-1 bg-blue-100/70 text-blue-700 text-[10px] px-2 py-2 rounded border border-blue-200 hover:bg-blue-200 transition font-bold uppercase tracking-wider text-center">
-                                                 CICILAN
+                                                CICILAN
                                             </button>
                                         @endif
 
@@ -256,73 +257,130 @@
             </div>
         @endif
 
-        {{-- MODAL KONFIRMASI PEMBAYARAN --}}
-        <div id="modal-pembayaran" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
-            <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 relative" id="modal-content">
-                <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white text-center relative">
-                    <button type="button" onclick="tutupModalKonfirmasi()" class="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                    <div class="mx-auto bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mb-3 backdrop-blur-md border border-white/30 shadow-inner">
-                        <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        {{-- MODAL KONFIRMASI PEMBAYARAN (VERSI LENGKAP DENGAN QRIS) --}}
+<div id="modal-pembayaran" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 relative flex flex-col max-h-[95vh]" id="modal-content">
+        
+        {{-- Header Modal --}}
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 text-white text-center relative shrink-0">
+            <button type="button" onclick="tutupModalKonfirmasi()" class="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <div class="mx-auto bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mb-2 backdrop-blur-md border border-white/30 shadow-inner">
+                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <h3 class="text-lg font-bold tracking-wide">Konfirmasi Pembayaran</h3>
+        </div>
+
+        {{-- Body Modal --}}
+        <div class="p-5 overflow-y-auto">
+            
+            {{-- Kotak Instruksi --}}
+            <div class="mb-4 bg-blue-50/70 border border-blue-100 rounded-xl p-3">
+                <h5 class="text-[11px] font-bold text-blue-800 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Cara Pembayaran
+                </h5>
+                <ol class="text-[10px] text-blue-700 list-decimal list-inside space-y-0.5 font-medium leading-relaxed">
+                    <li>Pilih metode pembayaran (Bank atau QRIS).</li>
+                    <li>Bayar dengan nominal <strong>persis</strong> sesuai Total Tagihan.</li>
+                    <li>Simpan bukti bayar, lalu <i>upload</i> di bawah dan klik <strong>Kirim</strong>.</li>
+                </ol>
+            </div>
+
+            {{-- PILIHAN METODE PEMBAYARAN (TABS) --}}
+            <div class="flex bg-gray-100 p-1 rounded-xl mb-4">
+                <button type="button" onclick="switchTab('bank')" id="tab-bank" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-blue-700 border border-gray-200 transition">
+                    Transfer Bank
+                </button>
+                <button type="button" onclick="switchTab('qris')" id="tab-qris" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition">
+                    Bayar via QRIS
+                </button>
+            </div>
+
+            {{-- KONTEN TAB: BANK BCA --}}
+            <div id="content-bank" class="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-4 relative overflow-hidden group hover:border-blue-300 transition block">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-blue-100 rounded-full -mr-12 -mt-12 opacity-50 transition-transform group-hover:scale-110"></div>
+                <div class="relative z-10">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Transfer Ke Rekening</span>
+                        <span class="bg-blue-100 text-blue-700 text-[9px] px-2 py-1 rounded font-bold border border-blue-200">BANK BCA</span>
                     </div>
-                    <h3 class="text-xl font-bold tracking-wide">Konfirmasi Pembayaran</h3>
+                    <div class="flex items-center gap-2 mt-1">
+                        <h4 class="text-2xl font-black text-gray-800 tracking-widest font-mono">1234567890</h4>
+                        <button type="button" onclick="salinRekening()" id="btn-salin" class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-600 text-[9px] px-2 py-1 rounded-lg shadow-sm transition flex items-center gap-1 font-bold group">
+                            <svg class="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            <span id="text-salin">Salin</span>
+                        </button>
+                    </div>
+                    <span class="text-[10px] font-semibold text-gray-500 block mt-1 uppercase tracking-wide">A.N. TK Mutiara Bogor</span>
                 </div>
+            </div>
 
-                <div class="p-6">
-                    <div class="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-5 relative overflow-hidden group hover:border-blue-300 transition">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full -mr-16 -mt-16 opacity-50 transition-transform group-hover:scale-110"></div>
-                        <div class="relative z-10">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Transfer Ke Rekening</span>
-                                <span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-1 rounded font-bold border border-blue-200">BANK BCA</span>
-                            </div>
-                            <h4 class="text-3xl font-black text-gray-800 tracking-widest mt-2 font-mono">123 4567 890</h4>
-                            <span class="text-xs font-semibold text-gray-500 block mt-2 uppercase tracking-wide">A.N. TK Mutiara Bogor</span>
-                        </div>
+            {{-- KONTEN TAB: QRIS --}}
+            <div id="content-qris" class="bg-blue-50/30 border border-blue-100 rounded-2xl p-4 mb-4 hidden text-center flex flex-col items-center">
+                <span class="bg-blue-600 text-white text-[10px] px-3 py-1 rounded-full font-bold shadow-sm mb-3">
+                    QRIS 
+                </span>
+                
+                <div class="bg-white p-2 rounded-xl shadow-sm border border-gray-100 inline-block mx-auto mb-2 relative group cursor-pointer" onclick="downloadQris()">
+                    <img src="{{ asset('images/qris.jpeg') }}" alt="QRIS TK Mutiara" class="w-32 h-32 object-contain group-hover:opacity-90 transition">
+                    
+                    {{-- Overlay tombol download --}}
+                    <div class="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                        <span class="text-white text-[10px] font-bold flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Simpan QR
+                        </span>
                     </div>
+                </div>
+                
+                <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">A.N. TK Mutiara Bogor</p>
+                <p class="text-[9px] text-gray-400 mt-1">Buka aplikasi e-Wallet / M-Banking Anda, pilih menu Scan QR, dan arahkan ke gambar ini.</p>
+            </div>
 
-                    <div class="flex justify-between items-center bg-emerald-50 border border-emerald-200 p-4 rounded-2xl mb-6 shadow-sm">
-                        <div class="flex items-center space-x-2">
-                            <div class="bg-emerald-100 p-1.5 rounded-full">
-                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            </div>
-                            <span class="text-sm font-bold text-emerald-900">Total Tagihan</span>
-                        </div>
-                        <span id="total-transfer-modal" class="text-2xl font-black text-emerald-600 tracking-tight">Rp 0</span>
+            {{-- Kotak Total Tagihan --}}
+            <div class="flex justify-between items-center bg-emerald-50 border border-emerald-200 p-3 rounded-2xl mb-4 shadow-sm">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-emerald-100 p-1.5 rounded-full">
+                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
+                    <span class="text-xs font-bold text-emerald-900">Total Tagihan</span>
+                </div>
+                <span id="total-transfer-modal" class="text-xl font-black text-emerald-600 tracking-tight">Rp 0</span>
+            </div>
 
-                    <div class="mb-8">
-                        <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Upload Bukti Transfer <span class="text-red-500">*</span></label>
-                        <div class="relative border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:bg-blue-50/50 hover:border-blue-400 transition cursor-pointer group">
-                            <input type="file" name="bukti_bayar" required accept="image/png, image/jpeg, image/jpg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" id="file-upload">
-                            <div class="space-y-2 z-10 relative pointer-events-none">
-                                <div class="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-100 transition">
-                                    <svg class="h-6 w-6 text-gray-400 group-hover:text-blue-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                    </svg>
-                                </div>
-                                <div class="text-sm text-gray-600" id="file-name-display">
-                                    <span class="font-bold text-blue-600">Pilih file</span> atau tarik gambar ke sini
-                                </div>
-                            </div>
+            {{-- Upload Area --}}
+            <div class="mb-5">
+                <label class="block text-[10px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Upload Bukti Transaksi <span class="text-red-500">*</span></label>
+                <div class="relative border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center hover:bg-blue-50/50 hover:border-blue-400 transition cursor-pointer group">
+                    <input type="file" name="bukti_bayar" required accept="image/png, image/jpeg, image/jpg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" id="file-upload">
+                    <div class="space-y-1 z-10 relative pointer-events-none">
+                        <div class="mx-auto w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-100 transition">
+                            <svg class="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
                         </div>
-                    </div>
-
-                    <div class="flex space-x-3">
-                        <button type="button" onclick="tutupModalKonfirmasi()" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 px-4 rounded-xl transition duration-200">
-                            Batal
-                        </button>
-                        <button type="submit" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-blue-200 transition duration-200 flex justify-center items-center gap-2 group">
-                            <span>Kirim Pembayaran</span>
-                        </button>
+                        <div class="text-xs text-gray-600" id="file-name-display">
+                            <span class="font-bold text-blue-600">Pilih file</span> atau tarik gambar ke sini
+                        </div>
+                        <p class="text-[9px] text-gray-400 font-semibold uppercase tracking-wider">Format: JPG, PNG (Maks 5MB)</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </form>
-</div>
 
+            {{-- Tombol Aksi --}}
+            <div class="flex space-x-3 shrink-0 mt-auto">
+                <button type="button" onclick="tutupModalKonfirmasi()" class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold py-2.5 px-4 rounded-xl transition duration-200">
+                    Batal
+                </button>
+                <button type="submit" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-blue-200 transition duration-200 flex justify-center items-center gap-2 group">
+                    <span>Kirim Pembayaran</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const checkboxes = document.querySelectorAll('.tagihan-checkbox');
@@ -395,46 +453,59 @@
         }
 
         function validateNominalX(id) {
-        const input = document.getElementById(`input_nominal_${id}`);
-        const errorMsg = document.getElementById(`error_${id}`);
-        const maxVal = parseFloat(input.getAttribute('max'));
+            const input = document.getElementById(`input_nominal_${id}`);
+            const errorMsg = document.getElementById(`error_${id}`);
+            const maxVal = parseFloat(input.getAttribute('max'));
 
-        // Biarkan user mengetik, kita hanya mengecek apakah angkanya valid
-        if (input.value !== "" && parseFloat(input.value) > maxVal) {
-            input.value = maxVal; // Hanya batasi jika melebihi sisa tagihan
-            errorMsg.classList.remove('hidden');
-            errorMsg.textContent = "Nominal melebihi sisa!";
-        } else if (input.value !== "" && parseFloat(input.value) < 1) {
-            // Jangan hapus angka yang diketik, cukup sembunyikan atau beri peringatan
-            errorMsg.classList.remove('hidden');
-            errorMsg.textContent = "Minimal Rp 1";
-        } else {
-            errorMsg.classList.add('hidden');
+            // Biarkan user mengetik, kita hanya mengecek apakah angkanya valid
+            if (input.value !== "" && parseFloat(input.value) > maxVal) {
+                input.value = maxVal; // Hanya batasi jika melebihi sisa tagihan
+                errorMsg.classList.remove('hidden');
+                errorMsg.textContent = "Nominal melebihi sisa!";
+            } else if (input.value !== "" && parseFloat(input.value) < 1) {
+                // Jangan hapus angka yang diketik, cukup sembunyikan atau beri peringatan
+                errorMsg.classList.remove('hidden');
+                errorMsg.textContent = "Minimal Rp 1";
+            } else {
+                errorMsg.classList.add('hidden');
+            }
+
+            window.hitungTotalBayar();
         }
-
-        window.hitungTotalBayar();
-    }
 
         document.querySelectorAll('.bulan-select').forEach(select => {
             select.addEventListener('change', function() {
                 const idMatch = this.name.match(/\d+/);
                 if (!idMatch) return;
+                
                 const id = idMatch[0];
                 const checkbox = document.querySelector(`.tagihan-checkbox[data-id="${id}"]`);
-                const hargaSatuBulan = parseFloat(checkbox.getAttribute('data-sisa'));
+                
+                // --- PERUBAHAN ADA DI SINI ---
+                // Mengambil harga asli 1 bulan dan sisa saat ini
+                const hargaSatuBulan = parseFloat(checkbox.getAttribute('data-harga-bulanan')); 
+                const sisaSaatIni = parseFloat(checkbox.getAttribute('data-sisa'));
+                const sudahDibayar = hargaSatuBulan - sisaSaatIni; // Jika ada cicilan sebelumnya
+                
                 const jumlahBulan = parseInt(this.value);
-                const totalBaru = hargaSatuBulan * jumlahBulan;
+                
+                // Menghitung total baru: Harga per bulan dikali jumlah bulan, lalu dikurangi cicilan yang sudah dibayar
+                const totalBaru = (hargaSatuBulan * jumlahBulan) - sudahDibayar;
+                // -----------------------------
+                
                 const inputNominal = document.getElementById(`input_nominal_${id}`);
                 if (inputNominal) {
                     inputNominal.value = totalBaru;
                     inputNominal.setAttribute('max', totalBaru);
                     inputNominal.setAttribute('min', totalBaru);
                 }
+                
                 const btnLunas = document.getElementById(`btn_lunas_${id}`);
                 if (btnLunas) {
                     btnLunas.innerHTML = `Lunas (${formatRupiah(totalBaru)})`;
                     btnLunas.setAttribute('onclick', `setNominalX('${id}', ${totalBaru})`);
                 }
+                
                 window.hitungTotalBayar();
             });
         });
@@ -508,5 +579,75 @@
             modal.classList.add('hidden');
         }, 300);
     }
+    window.salinRekening = function() {
+    // Ganti angka 1234567890 sesuai dengan rekening aslinya
+    const noRekening = "1234567890"; 
+    const btnText = document.getElementById('text-salin');
+    
+    navigator.clipboard.writeText(noRekening).then(() => {
+        // Beri efek visual sukses (mengganti teks jadi 'Tersalin!')
+        btnText.innerText = "Tersalin!";
+        btnText.classList.add('text-blue-600');
+        
+        // Kembalikan teks seperti semula setelah 2 detik
+        setTimeout(() => {
+            btnText.innerText = "Salin";
+            btnText.classList.remove('text-blue-600');
+        }, 2000);
+    }).catch(err => {
+        alert('Gagal menyalin rekening. Silakan salin manual.');
+    });
+    }
+    // Fungsi untuk memindah tab (Bank BCA <--> QRIS)
+window.switchTab = function(tabName) {
+    const tabBank = document.getElementById('tab-bank');
+    const tabQris = document.getElementById('tab-qris');
+    const contentBank = document.getElementById('content-bank');
+    const contentQris = document.getElementById('content-qris');
+
+    // Reset gaya tombol
+    const activeClass = ['bg-white', 'shadow-sm', 'text-blue-700', 'border', 'border-gray-200'];
+    const inactiveClass = ['text-gray-500', 'hover:text-gray-700', 'border-transparent'];
+
+    if (tabName === 'bank') {
+        // Aktifkan tab bank
+        tabBank.classList.add(...activeClass);
+        tabBank.classList.remove(...inactiveClass);
+        
+        tabQris.classList.add(...inactiveClass);
+        tabQris.classList.remove(...activeClass);
+
+        // Tampilkan konten bank
+        contentBank.classList.remove('hidden');
+        contentBank.classList.add('block');
+        contentQris.classList.add('hidden');
+        contentQris.classList.remove('block');
+
+    } else if (tabName === 'qris') {
+        // Aktifkan tab qris
+        tabQris.classList.add(...activeClass);
+        tabQris.classList.remove(...inactiveClass);
+        
+        tabBank.classList.add(...inactiveClass);
+        tabBank.classList.remove(...activeClass);
+
+        // Tampilkan konten QRIS
+        contentQris.classList.remove('hidden');
+        contentQris.classList.add('block');
+        contentBank.classList.add('hidden');
+        contentBank.classList.remove('block');
+    }
+}
+
+// Fungsi untuk mengunduh gambar QRIS (Opsional, sangat bagus untuk UX)
+window.downloadQris = function() {
+    const imageUrl = "/images/qris.jpeg";
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = 'QRIS_TK_Mutiara.jpg';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 </script>
 @endsection

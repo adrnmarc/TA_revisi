@@ -17,7 +17,7 @@ class SiswaController extends Controller
     {
         // 1. Validasi inputan
         $request->validate([
-            'nis' => 'required|numeric|unique:siswas,nis', 
+            'nis' => 'required|digits:10|unique:siswas,nis',
             'nama' => 'required|string|max:255',
             'kelas' => 'required|string',
             'wali' => 'required|string|max:255',
@@ -29,7 +29,7 @@ class SiswaController extends Controller
         ], [
             // Kustomisasi Pesan Error
             'nis.required' => 'Nomor Induk Siswa (NIS) wajib diisi!',
-            'nis.numeric' => 'Input Gagal! NIS harus berupa angka penuh, tidak boleh mengandung huruf.',
+            'nis.digits' => 'Input Gagal! NIS harus berupa angka dan tepat 10 digit.',
             'nis.unique' => 'Nomor NIS ini sudah terdaftar di data siswa TK Mutiara Bogor.',
         ]);
 
@@ -56,7 +56,7 @@ class SiswaController extends Controller
 
         // 1. Validasi update
         $request->validate([
-            'nis' => 'required|numeric|unique:siswas,nis,' . $id,
+            'nis' => 'required|digits:10|unique:siswas,nis,' . $id,
             'nama' => 'required|string|max:255',
             'kelas' => 'required|string',
             'wali' => 'required|string|max:255',
@@ -68,7 +68,7 @@ class SiswaController extends Controller
         ], [
             // Kustomisasi Pesan Error
             'nis.required' => 'Nomor Induk Siswa (NIS) wajib diisi!',
-            'nis.numeric' => 'Input Gagal! NIS harus berupa angka penuh, tidak boleh mengandung huruf.',
+            'nis.digits' => 'Input Gagal! NIS harus berupa angka dan tepat 10 digit.',
             'nis.unique' => 'Nomor NIS ini sudah digunakan oleh siswa lain.',
         ]);
 

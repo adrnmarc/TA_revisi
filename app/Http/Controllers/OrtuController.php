@@ -105,106 +105,126 @@ class OrtuController extends Controller
             'tagihan_id.required' => 'Pilih minimal satu tagihan yang ingin dibayar!',
         ]);
 
-        // Ambil ID siswa dari session kustom login orang tua Anda
         $siswaId = session('siswa_id');
 
-        // Pengaman jika session login tiba-tiba habis saat mengirim form
         if (!$siswaId) {
             return redirect('/login-ortu')->with('gagal', 'Sesi Anda telah berakhir, silakan login kembali.');
         }
 
-        // ====================================================================
-        // Menyimpan langsung ke public/bukti_bayar tanpa storage
-        // ====================================================================
+        // Simpan file bukti transfer
         $file = $request->file('bukti_bayar');
         $namaFileBukti = 'bukti_ortu_' . time() . '.' . $file->getClientOriginalExtension();
-
-        // Pindahkan langsung ke folder public fisik
         $file->move(public_path('bukti_bayar'), $namaFileBukti);
-
-        // Bentuk path string untuk disimpan ke database
         $pathBukti = 'bukti_bayar/' . $namaFileBukti;
-        // ====================================================================
 
         DB::transaction(function () use ($request, $pathBukti) {
             foreach ($request->tagihan_id as $id) {
                 $detail = DetailTagihan::with('tagihan', 'pembayarans')->find($id);
 
                 if ($detail) {
-                    // AMBIL NOMINAL DARI FORM (NOMINAL_BAYAR)
-                    $nominal = (float) ($request->nominal_bayar[$id] ?? 0);
+                    $nominalTotal = (float) ($request->nominal_bayar[$id] ?? 0);
+                    $jumlahBulan = (int) ($request->jumlah_bulan[$id] ?? 1);
+                    $isSpp = str_contains(strtolower($detail->nama_iuran), 'spp');
 
-                    if ($nominal > 0) {
-                        // Hitung total yang SUDAH dikonfirmasi admin sebelumnya
-                        // (pembayaran yang sudah "Diterima"/"Lunas", bukan yang masih pending)
+                    if ($nominalTotal > 0) {
                         $totalDiterimaSebelumnya = $detail->pembayarans
                             ->whereIn('status', ['Diterima', 'Lunas'])
                             ->sum('jumlah_diterima');
 
-                        // Kalau pembayaran kali ini (digabung dengan yang sudah dikonfirmasi)
-                        // mencapai total tagihan, berarti ini pembayaran PELUNASAN
-                        $calonTotal = $totalDiterimaSebelumnya + $nominal;
-                        $akanLunas = $calonTotal >= $detail->jumlah_bayar;
+                        // ========================================================
+                        // LOGIKA KHUSUS JIKA BAYAR SPP MULTI-BULAN
+                        // ========================================================
+                        if ($isSpp && $jumlahBulan > 1) {
+                            
+                            // 1. Lunasi tagihan bulan pertama
+                            $sisaBulanPertama = $detail->jumlah_bayar - $totalDiterimaSebelumnya;
+                            
+                            Pembayaran::create([
+                                'id_detail'       => $detail->id_detail,
+                                'user_id'         => 1,
+                                'tanggal_bayar'   => now(),
+                                'jumlah_diterima' => $sisaBulanPertama, // Hanya pakai nominal 1 bulan
+                                'bukti_bayar'     => $pathBukti,
+                                'status'          => 'Menunggu Verifikasi',
+                                'keterangan'      => 'Pembayaran via Portal Ortu (Multi-bulan)'
+                            ]);
 
-                        // 1. REKAM HISTORI DI TABEL PEMBAYARAN (tetap dicatat, tetap perlu dicek admin)
-                        Pembayaran::create([
-                            'id_detail'       => $detail->id_detail,
-                            'user_id'         => 1, // Default sistem
-                            'tanggal_bayar'   => now(),
-                            'jumlah_diterima' => $nominal, // MENGGUNAKAN NOMINAL DARI USER
-                            'bukti_bayar'     => $pathBukti,
-                            'status'          => 'Menunggu Verifikasi',
-                            'keterangan'      => 'Pembayaran via Portal Ortu'
-                        ]);
+                            $detail->update([
+                                'status_tagihan' => 'Menunggu Verifikasi',
+                                'bukti_bayar'    => $pathBukti
+                            ]);
 
-                        // 2. UPDATE JATUH TEMPO
-                        $tanggalUpdate = Carbon::parse($detail->tagihan->jatuh_tempo);
-                        if (str_contains(strtolower($detail->nama_iuran), 'spp')) {
-                            $tanggalUpdate = $tanggalUpdate->day(5);
-                        }
+                            $tanggalUpdate = Carbon::parse($detail->tagihan->jatuh_tempo)->day(5);
+                            $hargaPerBulan = $detail->jumlah_bayar;
 
-                        $detail->tagihan->update(['jatuh_tempo' => $tanggalUpdate->format('Y-m-d')]);
-
-                        // 3. UPDATE STATUS TAGIHAN
-                        // Kalau pembayaran ini akan MELUNASI tagihan -> tandai "Menunggu Verifikasi"
-                        // Kalau masih CICILAN (belum lunas semua) -> tetap "Belum Lunas"/"Mencicil",
-                        // meskipun data pembayarannya tetap masuk antrian verifikasi admin
-                        if ($akanLunas) {
-                            $statusBaru = 'Menunggu Verifikasi';
-                        } else {
-                            $statusBaru = $totalDiterimaSebelumnya > 0 ? 'Mencicil' : 'Belum Lunas';
-                        }
-
-                        $detail->update([
-                            'status_tagihan' => $statusBaru,
-                            'bukti_bayar'    => $pathBukti
-                        ]);
-
-                        // 4. LOGIKA BAYAR DI MUKA (KLONING TAGIHAN) - khusus SPP
-                        $jumlahBulan = $request->jumlah_bulan[$id] ?? 1;
-
-                        if ($jumlahBulan > 1 && str_contains(strtolower($detail->nama_iuran), 'spp')) {
+                            // 2. Kloning tagihan untuk bulan berikutnya DAN buat pembayarannya
                             for ($i = 1; $i < $jumlahBulan; $i++) {
-                                $tanggalBaru = $tanggalUpdate->copy()->addMonths($i)->day(5);
+                                $tanggalBaru = $tanggalUpdate->copy()->addMonths($i);
                                 $namaBulanBaru = $tanggalBaru->translatedFormat('F Y');
                                 $namaIuranBaru = 'Uang SPP / Bulan - ' . $namaBulanBaru;
 
+                                // Kloning Induk
                                 $tagihanBaru = Tagihan::create([
                                     'nis'          => $detail->tagihan->nis,
+                                    'id_siswa'     => $detail->id_siswa,
                                     'nama_tagihan' => $namaIuranBaru,
                                     'jatuh_tempo'  => $tanggalBaru->format('Y-m-d'),
                                 ]);
 
-                                DetailTagihan::create([
+                                // Kloning Detail
+                                $detailBaru = DetailTagihan::create([
                                     'id_tagihan'     => $tagihanBaru->id_tagihan,
                                     'id_siswa'       => $detail->id_siswa,
                                     'nama_iuran'     => $namaIuranBaru,
-                                    'jumlah_bayar'   => $detail->jumlah_bayar,
-                                    'sisa_tagihan'   => $detail->jumlah_bayar,
+                                    'jumlah_bayar'   => $hargaPerBulan,
+                                    'sisa_tagihan'   => $hargaPerBulan,
                                     'status_tagihan' => 'Menunggu Verifikasi',
                                     'bukti_bayar'    => $pathBukti
                                 ]);
+
+                                // BUAT RECORD PEMBAYARAN UNTUK KLONING INI
+                                // Ini yang sebelumnya terlupa, agar Admin bisa memverifikasi bulan ini
+                                Pembayaran::create([
+                                    'id_detail'       => $detailBaru->id_detail,
+                                    'user_id'         => 1, 
+                                    'tanggal_bayar'   => now(),
+                                    'jumlah_diterima' => $hargaPerBulan,
+                                    'bukti_bayar'     => $pathBukti,
+                                    'status'          => 'Menunggu Verifikasi',
+                                    'keterangan'      => 'Pembayaran via Portal Ortu (Multi-bulan)'
+                                ]);
                             }
+
+                        } 
+                        // ========================================================
+                        // LOGIKA NORMAL (1 BULAN ATAU CICILAN NON-SPP)
+                        // ========================================================
+                        else {
+                            $calonTotal = $totalDiterimaSebelumnya + $nominalTotal;
+                            $akanLunas = $calonTotal >= $detail->jumlah_bayar;
+
+                            Pembayaran::create([
+                                'id_detail'       => $detail->id_detail,
+                                'user_id'         => 1, 
+                                'tanggal_bayar'   => now(),
+                                'jumlah_diterima' => $nominalTotal,
+                                'bukti_bayar'     => $pathBukti,
+                                'status'          => 'Menunggu Verifikasi',
+                                'keterangan'      => 'Pembayaran via Portal Ortu'
+                            ]);
+
+                            $tanggalUpdate = Carbon::parse($detail->tagihan->jatuh_tempo);
+                            if ($isSpp) {
+                                $tanggalUpdate = $tanggalUpdate->day(5);
+                            }
+                            $detail->tagihan->update(['jatuh_tempo' => $tanggalUpdate->format('Y-m-d')]);
+
+                            $statusBaru = $akanLunas ? 'Menunggu Verifikasi' : ($totalDiterimaSebelumnya > 0 ? 'Mencicil' : 'Belum Lunas');
+
+                            $detail->update([
+                                'status_tagihan' => $statusBaru,
+                                'bukti_bayar'    => $pathBukti
+                            ]);
                         }
                     }
                 }
@@ -213,6 +233,7 @@ class OrtuController extends Controller
 
         return back()->with('sukses', 'Bukti pembayaran berhasil dikirim!');
     }
+
 
     /**
      * Menampilkan Daftar Pengumuman

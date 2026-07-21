@@ -44,6 +44,16 @@
 
         @forelse($daftarPengumuman as $info)
 
+        @php
+            $badgeKategori = match($info->kategori) {
+                'pembayaran' => ['label' => 'Pembayaran', 'kelas' => 'bg-blue-50 text-blue-600'],
+                'kegiatan'   => ['label' => 'Kegiatan',   'kelas' => 'bg-emerald-50 text-emerald-600'],
+                'libur'      => ['label' => 'Libur',      'kelas' => 'bg-amber-50 text-amber-600'],
+                'penting'    => ['label' => 'Penting',    'kelas' => 'bg-rose-50 text-rose-600'],
+                default      => ['label' => 'Umum',       'kelas' => 'bg-slate-100 text-slate-500'],
+            };
+        @endphp
+
         <div class="relative bg-white p-5 pl-6 rounded-2xl border border-slate-100 shadow-xs flex items-start justify-between gap-4 transition-all hover:shadow-md overflow-hidden">
 
             <span class="absolute left-0 top-0 h-full w-1 bg-emerald-400"></span>
@@ -53,7 +63,12 @@
                     <i data-lucide="info" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h4 class="font-display font-bold text-slate-800 text-sm sm:text-base mb-1">{{ $info->judul }}</h4>
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                        <h4 class="font-display font-bold text-slate-800 text-sm sm:text-base">{{ $info->judul }}</h4>
+                        <span class="px-2 py-0.5 {{ $badgeKategori['kelas'] }} rounded-full text-[10px] font-bold uppercase tracking-wide">
+                            {{ $badgeKategori['label'] }}
+                        </span>
+                    </div>
                     <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 mb-2 font-semibold">
                         <i data-lucide="calendar" class="w-3 h-3"></i>
                         {{ \Carbon\Carbon::parse($info->tanggal)->format('d F Y') }}
@@ -110,6 +125,16 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Judul Pengumuman</label>
                     <input type="text" name="judul" required placeholder="Contoh: Piknik Sekolah ke Kebun Raya"
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-slate-500 block mb-1">Kategori</label>
+                    <select name="kategori"
+                        class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
+                        @foreach($kategoriList as $value => $label)
+                            <option value="{{ $value }}" {{ $value === 'umum' ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div>

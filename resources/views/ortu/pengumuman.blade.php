@@ -62,14 +62,16 @@
 
             @forelse($pengumuman as $item)
                 @php
-                    // warna sticky note gantian biar papannya rame & ceria kayak mading beneran
+                    // warna sticky note sekarang ngikutin kategori, bukan urutan loop lagi,
+                    // biar pengumuman "Penting" selalu mencolok warnanya di mading manapun ia berada
                     $warnaSet = [
-                        ['bg' => '#FFF3B0', 'pin' => '#F59E0B'], // kuning
-                        ['bg' => '#BFE9E0', 'pin' => '#0FA968'], // mint
-                        ['bg' => '#FFD3E0', 'pin' => '#F472B6'], // pink
-                        ['bg' => '#C9E4FF', 'pin' => '#60A5FA'], // biru
+                        'umum'       => ['bg' => '#FFF3B0', 'pin' => '#F59E0B'], // kuning
+                        'kegiatan'   => ['bg' => '#BFE9E0', 'pin' => '#0FA968'], // mint
+                        'penting'    => ['bg' => '#FFD3E0', 'pin' => '#F472B6'], // pink
+                        'pembayaran' => ['bg' => '#C9E4FF', 'pin' => '#60A5FA'], // biru
+                        'libur'      => ['bg' => '#E4D6FF', 'pin' => '#A78BFA'], // ungu
                     ];
-                    $warna = $warnaSet[$loop->index % count($warnaSet)];
+                    $warna = $warnaSet[$item->kategori] ?? $warnaSet['umum'];
                 @endphp
                 <div class="sticky-note relative rounded-2xl p-5 mb-8 last:mb-0 inline-block w-full"
                      style="background-color: {{ $warna['bg'] }};">
@@ -80,7 +82,7 @@
                     <div class="flex justify-between items-start gap-3 mb-2">
                         <h4 class="font-mading font-bold text-lg text-slate-700">{{ $item->judul }}</h4>
                         <span class="flex-shrink-0 font-isi text-[10px] font-bold text-slate-500 uppercase tracking-wide bg-white/70 px-2.5 py-1 rounded-full">
-                            {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}
+                            {{ \Carbon\Carbon::parse($item->tanggal)->format('d M Y') }}
                         </span>
                     </div>
                     <p class="font-isi text-sm text-slate-600 leading-relaxed">

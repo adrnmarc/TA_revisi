@@ -733,9 +733,21 @@ Informasi terbaru dari TK Mutiara Bogor.
 
 @forelse($pengumuman as $item)
 
+@php
+    $badgeKategori = match($item->kategori) {
+        'pembayaran' => ['label' => 'Pembayaran', 'kelas' => 'bg-blue-100 text-blue-600'],
+        'kegiatan'   => ['label' => 'Kegiatan',   'kelas' => 'bg-emerald-100 text-emerald-600'],
+        'libur'      => ['label' => 'Libur',      'kelas' => 'bg-amber-100 text-amber-600'],
+        'penting'    => ['label' => 'Penting',    'kelas' => 'bg-rose-100 text-rose-600'],
+        default      => ['label' => 'Umum',       'kelas' => 'bg-slate-100 text-slate-500'],
+    };
+@endphp
+
 <div class="bg-slate-50 rounded-3xl p-8 shadow">
 
 <div class="flex justify-between items-center">
+
+<div class="flex items-center gap-3">
 
 <h3 class="font-bold text-2xl">
 
@@ -743,9 +755,17 @@ Informasi terbaru dari TK Mutiara Bogor.
 
 </h3>
 
+<span class="{{ $badgeKategori['kelas'] }} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+
+{{ $badgeKategori['label'] }}
+
+</span>
+
+</div>
+
 <span class="bg-blue-100 text-blue-600 px-4 py-2 rounded-full text-sm">
 
-{{ $item->created_at->format('d M Y') }}
+{{ \Carbon\Carbon::parse($item->tanggal)->format('d M Y') }}
 
 </span>
 

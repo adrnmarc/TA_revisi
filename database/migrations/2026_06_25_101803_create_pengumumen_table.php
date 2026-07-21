@@ -9,23 +9,23 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
-{
-    Schema::create('pengumumans', function (Blueprint $table) {
-        $table->id();
-        $table->string('judul');      
-        $table->date('tanggal');      
-        $table->text('isi');          
-        $table->string('kategori')->default('umum'); 
-        $table->timestamps();
-    });
-}
+    public function up(): void
+    {
+        Schema::create('pengumumans', function (Blueprint $table) {
+            $table->id();
+            $table->string('judul');
+            $table->date('tanggal');
+            $table->text('isi');
+            $table->string('kategori')->default('umum');
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('pengumumen');
+        Schema::dropIfExists('pengumumans');
     }
 };

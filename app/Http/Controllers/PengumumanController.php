@@ -7,27 +7,39 @@ use Illuminate\Http\Request;
 
 class PengumumanController extends Controller
 {
+    // Daftar kategori yang tersedia untuk pengumuman
+    public const KATEGORI = [
+        'umum'      => 'Umum',
+        'pembayaran'=> 'Pembayaran',
+        'kegiatan'  => 'Kegiatan',
+        'libur'     => 'Libur',
+        'penting'   => 'Penting',
+    ];
+
     // Menampilkan halaman pengumuman dengan data asli dari database
     public function index()
     {
-        $daftarPengumuman = Pengumuman::latest()->get();
-        return view('admin.pengumuman', compact('daftarPengumuman'));
+        $daftarPengumuman = Pengumuman::orderBy('tanggal', 'desc')->get();
+        $kategoriList = self::KATEGORI;
+
+        return view('admin.pengumuman', compact('daftarPengumuman', 'kategoriList'));
     }
 
     // Menyimpan pengumuman baru dari pop-up modal
     public function store(Request $request)
     {
         $request->validate([
-            'judul' => 'required|string|max:255',
-            'tanggal' => 'required|date',
-            'isi' => 'required|string',
+            'judul'    => 'required|string|max:255',
+            'tanggal'  => 'required|date',
+            'isi'      => 'required|string',
+            'kategori' => 'nullable|string|in:' . implode(',', array_keys(self::KATEGORI)),
         ]);
 
         Pengumuman::create([
-            'judul' => $request->judul,
-            'tanggal' => $request->tanggal,
-            'isi' => $request->isi,
-            'kategori' => $request->kategori ?? 'umum'
+            'judul'    => $request->judul,
+            'tanggal'  => $request->tanggal,
+            'isi'      => $request->isi,
+            'kategori' => $request->kategori ?? 'umum',
         ]);
 
         return redirect('/admin/pengumuman')->with('sukses', 'Pengumuman baru berhasil diterbitkan!');
@@ -45,11 +57,18 @@ class PengumumanController extends Controller
     // Fungsi baru untuk halaman depan (landing page)
     public function landingPage()
     {
-        // Mengambil data pengumuman terbaru dari database
-        $pengumuman = Pengumuman::latest()->get();
+        // Mengambil data pengumuman terbaru berdasarkan tanggal terbit, bukan created_at
+        $pengumuman = Pengumuman::orderBy('tanggal', 'desc')->get();
 
         // Mengembalikan view landing page dengan membawa data pengumuman
         return view('layouts.landing', compact('pengumuman'));
     }
 
+    // Fungsi untuk halaman papan mading orang tua
+    public function ortuIndex()
+    {
+        $pengumuman = Pengumuman::orderBy('tanggal', 'desc')->get();
+
+        return view('ortu.pengumuman', compact('pengumuman'));
+    }
 }

@@ -41,11 +41,11 @@ class TagihanController extends Controller
      * Simpan tagihan baru (ADMIN) dengan Deteksi Cerdas Per Bulan
      */
     /**
-     * Simpan tagihan baru (Satu Siswa atau Massal)
+     * Simpan tagihan baru (Satu Siswa, Per Kelas, atau Semua Siswa)
      */
     public function store(Request $request)
     {
-        // 1. Validasi Input (Hapus exists:siswas,nis agar value 'all' bisa lolos)
+        // 1. Validasi Input (Hapus exists:siswas,nis agar value 'all' / 'kelas:...' bisa lolos)
         $request->validate([
             'siswa_id' => 'required', 
             'id_kategori' => 'required|exists:kategori_tagihans,id', 
@@ -69,12 +69,23 @@ class TagihanController extends Controller
             }
         }
 
-        // 2. TENTUKAN TARGET: Satu Siswa atau Semua Siswa?
+        // 2. TENTUKAN TARGET: Satu Siswa, Satu Kelas, atau Semua Siswa?
+        $isMassal = false;
+
         if ($request->siswa_id === 'all') {
             // Ambil SEMUA data siswa dari database
+            $isMassal = true;
             $siswas = Siswa::all();
             if ($siswas->isEmpty()) {
                 return redirect()->back()->with('error', 'Tidak ada data siswa di database.');
+            }
+        } elseif (str_starts_with($request->siswa_id, 'kelas:')) {
+            // Ambil semua siswa pada satu kelas tertentu (mis. "kelas:TK A")
+            $isMassal = true;
+            $namaKelas = substr($request->siswa_id, strlen('kelas:'));
+            $siswas = Siswa::where('kelas', $namaKelas)->get();
+            if ($siswas->isEmpty()) {
+                return redirect()->back()->with('error', 'Tidak ada siswa di kelas ' . $namaKelas . '.');
             }
         } else {
             // Ambil SATU siswa sesuai NIS yang dipilih
@@ -125,7 +136,7 @@ class TagihanController extends Controller
         });
 
         // 4. BERIKAN NOTIFIKASI HASIL
-        if ($request->siswa_id === 'all') {
+        if ($isMassal) {
             $pesan = "Berhasil membuat tagihan untuk $berhasil siswa.";
             if ($gagal > 0) {
                 $pesan .= " ($gagal siswa dilewati karena sudah memiliki tagihan ini).";
@@ -284,6 +295,37 @@ class TagihanController extends Controller
         });
 
         return redirect()->back()->with('sukses', 'Tagihan berhasil dihapus.');
+    }
+
+    /**
+     * Hapus banyak tagihan sekaligus (ADMIN - Bulk Delete)
+     */
+    public function destroyBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'exists:tagihans,id_tagihan',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            foreach ($request->ids as $idTagihan) {
+                $tagihan = Tagihan::find($idTagihan);
+                if (!$tagihan) {
+                    continue;
+                }
+
+                $detail = DetailTagihan::where('id_tagihan', $tagihan->id_tagihan)->first();
+                if ($detail) {
+                    $detail->pembayarans()->delete();
+                    $detail->delete();
+                }
+
+                $tagihan->delete();
+            }
+        });
+
+        $jumlah = count($request->ids);
+        return redirect()->back()->with('sukses', "$jumlah tagihan berhasil dihapus.");
     }
 
     /**

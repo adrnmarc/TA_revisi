@@ -55,6 +55,14 @@
 
     </div>
 
+    {{-- Filter Kelas --}}
+    <div class="flex flex-wrap items-center gap-2 mb-6" id="filterKelasWrapper">
+        <button type="button" class="btn-filter-kelas px-4 py-2 rounded-full text-sm font-semibold bg-blue-600 text-white transition-colors" data-kelas="Semua">Semua</button>
+        <button type="button" class="btn-filter-kelas px-4 py-2 rounded-full text-sm font-semibold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors" data-kelas="TK A">TK A</button>
+        <button type="button" class="btn-filter-kelas px-4 py-2 rounded-full text-sm font-semibold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors" data-kelas="TK B1">TK B1</button>
+        <button type="button" class="btn-filter-kelas px-4 py-2 rounded-full text-sm font-semibold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors" data-kelas="TK B2">TK B2</button>
+    </div>
+
     {{-- Tabel Data Siswa --}}
     <div class="relative bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
 
@@ -89,7 +97,7 @@
                         };
                     @endphp
 
-                    <tr class="baris-siswa hover:bg-slate-50/50 transition-colors">
+                    <tr class="baris-siswa hover:bg-slate-50/50 transition-colors" data-kelas="{{ $siswa->kelas }}">
 
                         <td class="py-4 px-6 font-display font-semibold text-slate-900 kolom-nis">{{ $siswa->nis }}</td>
 
@@ -409,35 +417,62 @@
             });
         });
 
-        // Live Search Sisi Klien untuk Tabel Siswa
+        // Live Search + Filter Kelas Sisi Klien untuk Tabel Siswa
         const inputCariSiswa = document.getElementById('inputCariSiswa');
         const barisSiswa = document.querySelectorAll('.baris-siswa');
         const pencarianKosong = document.getElementById('pencarianKosong');
+        const tombolFilterKelas = document.querySelectorAll('.btn-filter-kelas');
 
-        if (inputCariSiswa) {
-            inputCariSiswa.addEventListener('input', function () {
-                const filter = this.value.toLowerCase().trim();
-                let adaCocok = false;
+        let kelasAktif = 'Semua';
 
-                barisSiswa.forEach(row => {
-                    const nis = row.querySelector('.kolom-nis').textContent.toLowerCase();
-                    const nama = row.querySelector('.kolom-nama').textContent.toLowerCase();
+        function terapkanFilter() {
+            const filter = inputCariSiswa ? inputCariSiswa.value.toLowerCase().trim() : '';
+            let adaCocok = false;
 
-                    if (nis.includes(filter) || nama.includes(filter)) {
-                        row.classList.remove('hidden');
-                        adaCocok = true;
-                    } else {
-                        row.classList.add('hidden');
-                    }
-                });
+            barisSiswa.forEach(row => {
+                const nis = row.querySelector('.kolom-nis').textContent.toLowerCase();
+                const nama = row.querySelector('.kolom-nama').textContent.toLowerCase();
+                const kelasBaris = row.getAttribute('data-kelas');
 
-                if (!adaCocok && filter !== "") {
+                const cocokTeks = nis.includes(filter) || nama.includes(filter);
+                const cocokKelas = (kelasAktif === 'Semua') || (kelasBaris === kelasAktif);
+
+                if (cocokTeks && cocokKelas) {
+                    row.classList.remove('hidden');
+                    adaCocok = true;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+
+            if (pencarianKosong) {
+                if (!adaCocok) {
                     pencarianKosong.classList.remove('hidden');
                 } else {
                     pencarianKosong.classList.add('hidden');
                 }
-            });
+            }
         }
+
+        if (inputCariSiswa) {
+            inputCariSiswa.addEventListener('input', terapkanFilter);
+        }
+
+        tombolFilterKelas.forEach(btn => {
+            btn.addEventListener('click', function () {
+                kelasAktif = this.getAttribute('data-kelas');
+
+                tombolFilterKelas.forEach(b => {
+                    b.classList.remove('bg-blue-600', 'text-white');
+                    b.classList.add('bg-slate-100', 'text-slate-500');
+                });
+
+                this.classList.remove('bg-slate-100', 'text-slate-500');
+                this.classList.add('bg-blue-600', 'text-white');
+
+                terapkanFilter();
+            });
+        });
 
         // PENGUNCI DAN PEMBERSIH HURUF OTOMATIS (REAL-TIME REGEX)
         const buatNis = document.getElementById('buat_nis');

@@ -14,6 +14,38 @@
         input[type=number] {
             -moz-appearance: textfield;
         }
+
+        /* Checkbox custom accent color */
+        .checkbox-tagihan, #checkAllTagihan {
+            accent-color: #1E88E5;
+            width: 17px;
+            height: 17px;
+        }
+
+        /* Kolom checkbox disembunyikan secara default */
+        .kolom-pilih {
+            display: none;
+        }
+        .mode-pilih-aktif .kolom-pilih {
+            display: table-cell;
+        }
+
+        /* Floating bulk action bar */
+        #bulkActionBar {
+            position: fixed;
+            left: 50%;
+            bottom: 28px;
+            transform: translateX(-50%) translateY(120%);
+            opacity: 0;
+            pointer-events: none; /* tidak bisa diklik / menutupi apa pun saat tersembunyi */
+            transition: transform .3s ease, opacity .3s ease;
+            z-index: 60;
+        }
+        #bulkActionBar.tampil {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto; /* baru bisa diklik saat sedang tampil */
+        }
     </style>
 
     {{-- Notifikasi Sukses --}}
@@ -58,10 +90,17 @@
                    class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
         </div>
 
-        <button id="btnBukaTagihan" class="w-full sm:w-auto bg-[#1E88E5] hover:bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md shadow-blue-100 transition-all cursor-pointer">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            <span>Buat Tagihan Baru</span>
-        </button>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button type="button" id="btnModePilih" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer">
+                <i data-lucide="list-checks" class="w-4 h-4"></i>
+                <span id="labelModePilih">Pilih</span>
+            </button>
+
+            <button id="btnBukaTagihan" class="w-full sm:w-auto bg-[#1E88E5] hover:bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md shadow-blue-100 transition-all cursor-pointer">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Buat Tagihan Baru</span>
+            </button>
+        </div>
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
@@ -69,6 +108,9 @@
             <table class="w-full text-left border-collapse" id="tabelTagihan">
                 <thead>
                     <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th class="kolom-pilih py-4 pl-6 pr-2 w-10">
+                            <input type="checkbox" id="checkAllTagihan" title="Pilih semua tagihan">
+                        </th>
                         <th class="py-4 px-6">Nama Siswa</th>
                         <th class="py-4 px-6">Jenis Tagihan</th>
                         <th class="py-4 px-6">Tanggal Tagihan</th>
@@ -80,6 +122,9 @@
                 <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-100">
                     @forelse($tagihans as $tagihan)
                         <tr class="baris-data hover:bg-slate-50/50 transition-colors">
+                            <td class="kolom-pilih py-4 pl-6 pr-2">
+                                <input type="checkbox" class="checkbox-tagihan" value="{{ $tagihan->id_tagihan }}">
+                            </td>
                             <td class="py-4 px-6 text-slate-900 font-semibold kolom-siswa">{{ optional($tagihan->siswa)->nama ?? 'Tidak Diketahui' }}</td>
                             <td class="py-4 px-6 kolom-jenis">
                                 {{ $tagihan->nama_tagihan }}
@@ -141,7 +186,7 @@
                         </tr>
                     @empty
                         <tr id="barisKosong">
-                            <td colspan="6" class="py-12 text-center text-slate-400 font-medium">
+                            <td colspan="7" class="py-12 text-center text-slate-400 font-medium">
                                 <div class="flex flex-col items-center justify-center gap-2">
                                     <i data-lucide="credit-card" class="w-8 h-8 text-slate-300"></i>
                                     <span>Belum ada data tagihan di database.</span>
@@ -152,6 +197,30 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    {{-- Spacer supaya baris terakhir tabel tidak ketutupan action bar mengambang --}}
+    <div class="h-28"></div>
+
+    {{-- FORM TERSEMBUNYI UNTUK HAPUS MASSAL --}}
+    <form id="formBulkDelete" action="/admin/tagihan/hapus-massal" method="POST">
+        @csrf
+        @method('DELETE')
+    </form>
+
+    {{-- ACTION BAR MENGAMBANG (muncul saat ada tagihan yang dicentang) --}}
+    <div id="bulkActionBar" class="bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-3.5 flex items-center gap-4">
+        <span class="text-sm font-semibold">
+            <span id="bulkCount">0</span> tagihan dipilih
+        </span>
+        <div class="w-px h-5 bg-white/20"></div>
+        <button type="button" id="btnBulkCancel" class="text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer">
+            Batal
+        </button>
+        <button type="button" id="btnBulkDelete" class="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            Hapus Terpilih
+        </button>
     </div>
 
     {{-- MODAL BUAT TAGIHAN BARU --}}
@@ -170,10 +239,31 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Pilih Siswa</label>
                     <select name="siswa_id" required class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1E88E5] focus:bg-white transition-all">
                         <option value="">-- Pilih Anak Didik --</option>
-                        <option value="all" class="font-bold text-blue-600">⭐⭐ BUAT UNTUK SEMUA SISWA ⭐⭐</option>
-                        @foreach($daftarSiswa as $siswa)
-                            <option value="{{ $siswa->nis }}">{{ $siswa->nama }} ({{ $siswa->kelas }})</option>
-                        @endforeach
+
+                        <optgroup label="Buat Tagihan Massal">
+                            <option value="all" class="font-bold text-blue-600">⭐ Semua Siswa (Semua Kelas) ⭐</option>
+                            <option value="kelas:TK A" class="font-semibold text-blue-600">Semua Siswa TK A</option>
+                            <option value="kelas:TK B1" class="font-semibold text-blue-600">Semua Siswa TK B1</option>
+                            <option value="kelas:TK B2" class="font-semibold text-blue-600">Semua Siswa TK B2</option>
+                        </optgroup>
+
+                        <optgroup label="TK A">
+                            @foreach($daftarSiswa->where('kelas', 'TK A') as $siswa)
+                                <option value="{{ $siswa->nis }}">{{ $siswa->nama }}</option>
+                            @endforeach
+                        </optgroup>
+
+                        <optgroup label="TK B1">
+                            @foreach($daftarSiswa->where('kelas', 'TK B1') as $siswa)
+                                <option value="{{ $siswa->nis }}">{{ $siswa->nama }}</option>
+                            @endforeach
+                        </optgroup>
+
+                        <optgroup label="TK B2">
+                            @foreach($daftarSiswa->where('kelas', 'TK B2') as $siswa)
+                                <option value="{{ $siswa->nis }}">{{ $siswa->nama }}</option>
+                            @endforeach
+                        </optgroup>
                     </select>
                 </div>
                 <div>
@@ -391,6 +481,103 @@
                     document.getElementById('modalEditTagihan').classList.remove('hidden');
                 });
             });
+
+            // ===== TOGGLE MODE PILIH (checkbox tersembunyi sampai diaktifkan) =====
+            const tabelWrapper = document.querySelector('.overflow-x-auto');
+            const btnModePilih = document.getElementById('btnModePilih');
+            const labelModePilih = document.getElementById('labelModePilih');
+
+            // ===== PILIH BANYAK / HAPUS MASSAL TAGIHAN =====
+            const checkAllTagihan = document.getElementById('checkAllTagihan');
+            const checkboxTagihan = document.querySelectorAll('.checkbox-tagihan');
+            const bulkActionBar = document.getElementById('bulkActionBar');
+            const bulkCount = document.getElementById('bulkCount');
+            const formBulkDelete = document.getElementById('formBulkDelete');
+            const btnBulkDelete = document.getElementById('btnBulkDelete');
+            const btnBulkCancel = document.getElementById('btnBulkCancel');
+
+            function perbaruiActionBar() {
+                const terpilih = document.querySelectorAll('.checkbox-tagihan:checked');
+
+                if (terpilih.length > 0) {
+                    bulkActionBar.classList.add('tampil');
+                    bulkCount.textContent = terpilih.length;
+                } else {
+                    bulkActionBar.classList.remove('tampil');
+                }
+
+                checkAllTagihan.checked = checkboxTagihan.length > 0 && terpilih.length === checkboxTagihan.length;
+            }
+
+            function nonaktifkanModePilih() {
+                tabelWrapper.classList.remove('mode-pilih-aktif');
+                btnModePilih.classList.remove('bg-[#1E88E5]', 'text-white', 'hover:bg-blue-600');
+                btnModePilih.classList.add('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200');
+                labelModePilih.textContent = 'Pilih';
+
+                checkboxTagihan.forEach(cb => cb.checked = false);
+                if (checkAllTagihan) checkAllTagihan.checked = false;
+                perbaruiActionBar();
+            }
+
+            if (btnModePilih) {
+                btnModePilih.addEventListener('click', function() {
+                    const sedangAktif = tabelWrapper.classList.contains('mode-pilih-aktif');
+
+                    if (sedangAktif) {
+                        nonaktifkanModePilih();
+                    } else {
+                        tabelWrapper.classList.add('mode-pilih-aktif');
+                        btnModePilih.classList.remove('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200');
+                        btnModePilih.classList.add('bg-[#1E88E5]', 'text-white', 'hover:bg-blue-600');
+                        labelModePilih.textContent = 'Batalkan Pilih';
+                    }
+                });
+            }
+
+            if (checkAllTagihan) {
+                checkAllTagihan.addEventListener('change', function() {
+                    checkboxTagihan.forEach(cb => cb.checked = checkAllTagihan.checked);
+                    perbaruiActionBar();
+                });
+            }
+
+            checkboxTagihan.forEach(cb => {
+                cb.addEventListener('change', perbaruiActionBar);
+            });
+
+            if (btnBulkCancel) {
+                btnBulkCancel.addEventListener('click', function() {
+                    checkboxTagihan.forEach(cb => cb.checked = false);
+                    if (checkAllTagihan) checkAllTagihan.checked = false;
+                    perbaruiActionBar();
+                });
+            }
+
+            if (btnBulkDelete) {
+                btnBulkDelete.addEventListener('click', function() {
+                    const terpilih = document.querySelectorAll('.checkbox-tagihan:checked');
+                    if (terpilih.length === 0) return;
+
+                    const konfirmasi = confirm(
+                        'Yakin ingin menghapus ' + terpilih.length + ' tagihan terpilih? Tindakan ini tidak bisa dibatalkan.'
+                    );
+                    if (!konfirmasi) return;
+
+                    // Bersihkan input hidden lama (jika ada), lalu isi ulang sesuai centang saat ini
+                    formBulkDelete.querySelectorAll('input[name="ids[]"]').forEach(el => el.remove());
+
+                    terpilih.forEach(cb => {
+                        const inputTersembunyi = document.createElement('input');
+                        inputTersembunyi.type = 'hidden';
+                        inputTersembunyi.name = 'ids[]';
+                        inputTersembunyi.value = cb.value;
+                        formBulkDelete.appendChild(inputTersembunyi);
+                    });
+
+                    formBulkDelete.submit();
+                });
+            }
         });
 
         function closeEditModal() {

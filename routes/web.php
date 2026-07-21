@@ -60,6 +60,9 @@ Route::middleware([CheckAdminLogin::class])->group(function () {
     Route::get('/admin/tagihan', [TagihanController::class, 'index']);
     Route::post('/admin/tagihan', [TagihanController::class, 'store']);
     Route::put('/admin/tagihan/{id}', [TagihanController::class, 'update']);
+    // PENTING: route hapus massal harus di ATAS route delete/{id}, agar "hapus-massal"
+    // tidak ikut tertangkap sebagai parameter {id} pada route di bawahnya.
+    Route::delete('/admin/tagihan/hapus-massal', [TagihanController::class, 'destroyBulk'])->name('tagihan.destroyBulk');
     Route::delete('/admin/tagihan/{id}', [TagihanController::class, 'destroy']);
 
     // ===== TAMBAHAN BARU: Kelola Kategori Tagihan =====
