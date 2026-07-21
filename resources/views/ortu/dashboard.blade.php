@@ -83,10 +83,7 @@
                     @endif
                 </div>
 
-                <a href="/ortu/profil"
-                    class="text-sm font-semibold text-emerald-600 hover:underline shrink-0">
-                    Lihat Profil Lengkap →
-                </a>
+
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-5">

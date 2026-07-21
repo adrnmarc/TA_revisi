@@ -52,11 +52,12 @@
                 'penting'    => ['label' => 'Penting',    'kelas' => 'bg-rose-50 text-rose-600'],
                 default      => ['label' => 'Umum',       'kelas' => 'bg-slate-100 text-slate-500'],
             };
+            $belumTayang = \Carbon\Carbon::parse($info->tanggal)->isFuture();
         @endphp
 
         <div class="relative bg-white p-5 pl-6 rounded-2xl border border-slate-100 shadow-xs flex items-start justify-between gap-4 transition-all hover:shadow-md overflow-hidden">
 
-            <span class="absolute left-0 top-0 h-full w-1 bg-emerald-400"></span>
+            <span class="absolute left-0 top-0 h-full w-1 {{ $belumTayang ? 'bg-slate-300' : 'bg-emerald-400' }}"></span>
 
             <div class="flex items-start gap-4">
                 <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
@@ -68,6 +69,12 @@
                         <span class="px-2 py-0.5 {{ $badgeKategori['kelas'] }} rounded-full text-[10px] font-bold uppercase tracking-wide">
                             {{ $badgeKategori['label'] }}
                         </span>
+                        @if($belumTayang)
+                            <span class="px-2 py-0.5 bg-slate-200 text-slate-600 rounded-full text-[10px] font-bold uppercase tracking-wide inline-flex items-center gap-1">
+                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                Terjadwal
+                            </span>
+                        @endif
                     </div>
                     <span class="inline-flex items-center gap-1.5 text-xs text-slate-400 mb-2 font-semibold">
                         <i data-lucide="calendar" class="w-3 h-3"></i>
@@ -141,6 +148,7 @@
                     <label class="text-xs font-semibold text-slate-500 block mb-1">Tanggal Terbit</label>
                     <input type="date" name="tanggal" required value="{{ date('Y-m-d') }}"
                         class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 focus:bg-white transition-all">
+                    <p class="text-[11px] text-slate-400 font-medium mt-1">Kalau tanggal ini diisi di masa depan, pengumuman baru akan tampil ke publik saat tanggal tersebut tiba.</p>
                 </div>
 
                 <div>

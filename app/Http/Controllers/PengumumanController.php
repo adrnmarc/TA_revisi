@@ -17,6 +17,8 @@ class PengumumanController extends Controller
     ];
 
     // Menampilkan halaman pengumuman dengan data asli dari database
+    // Catatan: admin sengaja melihat SEMUA pengumuman (termasuk yang terjadwal/belum tayang)
+    // supaya bisa dikelola. Yang disembunyikan hanya di sisi publik (landing page & ortu).
     public function index()
     {
         $daftarPengumuman = Pengumuman::orderBy('tanggal', 'desc')->get();
@@ -57,8 +59,11 @@ class PengumumanController extends Controller
     // Fungsi baru untuk halaman depan (landing page)
     public function landingPage()
     {
-        // Mengambil data pengumuman terbaru berdasarkan tanggal terbit, bukan created_at
-        $pengumuman = Pengumuman::orderBy('tanggal', 'desc')->get();
+        // Hanya tampilkan pengumuman yang tanggal terbitnya sudah tiba (hari ini atau sebelumnya).
+        // Pengumuman dengan tanggal terbit di masa depan otomatis disembunyikan sampai tanggalnya tiba.
+        $pengumuman = Pengumuman::whereDate('tanggal', '<=', now())
+            ->orderBy('tanggal', 'desc')
+            ->get();
 
         // Mengembalikan view landing page dengan membawa data pengumuman
         return view('layouts.landing', compact('pengumuman'));
@@ -67,7 +72,10 @@ class PengumumanController extends Controller
     // Fungsi untuk halaman papan mading orang tua
     public function ortuIndex()
     {
-        $pengumuman = Pengumuman::orderBy('tanggal', 'desc')->get();
+        // Sama seperti landing page: pengumuman terjadwal (tanggal terbit di masa depan) belum ditampilkan
+        $pengumuman = Pengumuman::whereDate('tanggal', '<=', now())
+            ->orderBy('tanggal', 'desc')
+            ->get();
 
         return view('ortu.pengumuman', compact('pengumuman'));
     }

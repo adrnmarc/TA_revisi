@@ -50,7 +50,13 @@ class OrtuController extends Controller
         ->count();
 
         $riwayat = DetailTagihan::where('id_siswa', $siswa_id)->latest()->get();
-        $pengumuman = \App\Models\Pengumuman::latest()->take(3)->get();
+
+        // FIX: hanya tampilkan pengumuman yang tanggal terbitnya sudah tiba,
+        // diurutkan berdasarkan tanggal terbit (bukan created_at)
+        $pengumuman = \App\Models\Pengumuman::whereDate('tanggal', '<=', now())
+            ->orderBy('tanggal', 'desc')
+            ->take(3)
+            ->get();
 
         return view('ortu.dashboard', compact('totalBayar', 'jumlahTransaksi', 'riwayat', 'siswa', 'pengumuman'));
     }
@@ -240,7 +246,12 @@ class OrtuController extends Controller
      */
     public function pengumuman()
     {
-        $pengumuman = \App\Models\Pengumuman::latest()->get();
+        // FIX: hanya tampilkan pengumuman yang tanggal terbitnya sudah tiba (hari ini atau sebelumnya),
+        // dan urutkan berdasarkan tanggal terbit, bukan created_at
+        $pengumuman = \App\Models\Pengumuman::whereDate('tanggal', '<=', now())
+            ->orderBy('tanggal', 'desc')
+            ->get();
+
         return view('ortu.pengumuman', compact('pengumuman'));
     }
 }
