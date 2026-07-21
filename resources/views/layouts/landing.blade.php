@@ -821,8 +821,8 @@ Silakan cek kembali nanti.
         <div class="grid md:grid-cols-3 gap-8 mt-16">
 
             <!-- Card WhatsApp -->
-            <div class="bg-white rounded-3xl shadow-lg p-8 hover:-translate-y-2 transition flex flex-col justify-between">
-                <div>
+            <div class="bg-white rounded-3xl shadow-lg p-8 hover:-translate-y-2 transition flex flex-col items-center text-center justify-between">
+                <div class="flex flex-col items-center">
                     <!-- Logo Link WhatsApp (Bisa Diklik Langsung) -->
                     <a href="https://wa.me/6285716698823" target="_blank" 
                        class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-emerald-100/50 hover:scale-110 transition-transform duration-200 cursor-pointer">
@@ -841,8 +841,8 @@ Silakan cek kembali nanti.
             </div>
 
             <!-- Card Instagram -->
-            <div class="bg-white rounded-3xl shadow-lg p-8 hover:-translate-y-2 transition flex flex-col justify-between">
-                <div>
+            <div class="bg-white rounded-3xl shadow-lg p-8 hover:-translate-y-2 transition flex flex-col items-center text-center justify-between">
+                <div class="flex flex-col items-center">
                     <!-- Logo Link Instagram (Bisa Diklik Langsung) -->
                     <a href="https://www.instagram.com/tk_mutiara_bogor?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" 
                        class="w-14 h-14 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-pink-100/50 hover:scale-110 transition-transform duration-200 cursor-pointer">
@@ -863,8 +863,8 @@ Silakan cek kembali nanti.
             </div>
 
             <!-- Card Email -->
-            <div class="bg-white rounded-3xl shadow-lg p-8 hover:-translate-y-2 transition flex flex-col justify-between">
-                <div>
+            <div class="bg-white rounded-3xl shadow-lg p-8 hover:-translate-y-2 transition flex flex-col items-center text-center justify-between">
+                <div class="flex flex-col items-center">
                     <!-- Logo Link Email (Bisa Diklik Langsung) -->
                     <a href="mailto:tkmutiarabogor@ymail.com" 
                        class="w-14 h-14 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-sky-100/50 hover:scale-110 transition-transform duration-200 cursor-pointer">
