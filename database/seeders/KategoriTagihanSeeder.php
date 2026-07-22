@@ -15,31 +15,31 @@ class KategoriTagihanSeeder extends Seeder
         $kategoris = [
             [
                 'nama_kategori' => 'Uang Sekolah (Uang Program)',
-                'harga_default' => 500000,
+                'harga_default' => 1000000,
                 'bisa_dicicil' => 1,
                 'maksimal_angsuran' => 3,
             ],
             [
                 'nama_kategori' => 'Uang Ekskul',
-                'harga_default' => 150000,
+                'harga_default' => 60000,
                 'bisa_dicicil' => 0,
                 'maksimal_angsuran' => 1,
             ],
             [
                 'nama_kategori' => 'Uang POMG',
-                'harga_default' => 100000,
+                'harga_default' => 10000,
                 'bisa_dicicil' => 0,
                 'maksimal_angsuran' => 1,
             ],
             [
                 'nama_kategori' => 'Uang MMP',
-                'harga_default' => 200000,
+                'harga_default' => 50000,
                 'bisa_dicicil' => 1,
                 'maksimal_angsuran' => 2,
             ],
             [
                 'nama_kategori' => 'Uang SPP / Bulan',
-                'harga_default' => 350000,
+                'harga_default' => 150000,
                 'bisa_dicicil' => 0,
                 'maksimal_angsuran' => 1,
             ],

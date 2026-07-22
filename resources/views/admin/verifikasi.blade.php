@@ -50,6 +50,14 @@
                 </thead>
                 <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-100">
                     @forelse($pembayarans as $pembayaran)
+                        @php
+                            // FIX: ini SATU-SATUNYA sumber kebenaran untuk "ada cicilan baru yang menunggu?"
+                            // Dipakai konsisten di kolom Nominal, Bukti, dan Aksi supaya tidak ada lagi
+                            // kondisi yang beda-beda (sebelumnya kolom Aksi memakai pembayarans->count() > 0
+                            // yang tetap true walau tidak ada pembayaran pending, sehingga tombol Konfirmasi
+                            // masih muncul padahal tidak ada cicilan baru).
+                            $pendingPayment = $pembayaran->pembayarans->where('status', 'Menunggu Verifikasi')->first();
+                        @endphp
                         <tr class="baris-verifikasi hover:bg-slate-50/50 transition-colors">
                             <td class="py-4 px-6 text-slate-900 font-semibold">{{ $pembayaran->siswa->nama ?? '-' }}</td>
                             <td class="py-4 px-6">{{ $pembayaran->siswa->kelas ?? '-' }}</td>
@@ -58,7 +66,7 @@
                                 Rp {{ number_format($pembayaran->jumlah_bayar, 0, ',', '.') }}
                                 @if(str_contains(strtolower($pembayaran->nama_iuran), 'program'))
                                     <div class="text-[10px] text-slate-400 font-normal">
-                                        Sudah dibayar: Rp {{ number_format($pembayaran->pembayarans->sum('jumlah_diterima'), 0, ',', '.') }}
+                                        Sudah dibayar: Rp {{ number_format($pembayaran->pembayarans->whereIn('status', ['Diterima', 'Lunas'])->sum('jumlah_diterima'), 0, ',', '.') }}
                                     </div>
                                 @endif
                             </td>
@@ -81,15 +89,17 @@
                             {{-- ========================================== --}}
 
                             <td class="py-4 px-6">
-                                <span class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 rounded-lg border border-rose-100">{{ $pembayaran->status_tagihan }}</span>
+                                <span class="inline-block whitespace-nowrap shrink-0 px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 rounded-lg border border-rose-100">{{ $pembayaran->status_tagihan }}</span>
                             </td>
                             
                             <td class="py-4 px-6 text-center">
-    @if($pembayaran->status_tagihan != 'Lunas' && (!empty($pembayaran->bukti_bayar) || $pembayaran->pembayarans->count() > 0))
+    {{-- FIX: sebelumnya kondisi ini "status != Lunas && (bukti_bayar ada ATAU pernah ada riwayat pembayaran)".
+         Riwayat pembayaran (pembayarans->count() > 0) tetap true selamanya setelah cicilan PERTAMA
+         dikonfirmasi, sehingga tombol KONFIRMASI/TOLAK tetap tampil walau TIDAK ADA cicilan baru
+         yang menunggu. Sekarang cukup cek $pendingPayment saja: ada record 'Menunggu Verifikasi' atau tidak. --}}
+    @if($pembayaran->status_tagihan != 'Lunas' && $pendingPayment)
         
-        {{-- Ambil pembayaran yang sedang menunggu verifikasi untuk ditampilkan nilainya --}}
         @php
-            $pendingPayment = $pembayaran->pembayarans->where('status', 'Menunggu Verifikasi')->first();
             $nominalDiterima = $pendingPayment->jumlah_diterima ?? 0;
         @endphp
 
@@ -118,6 +128,8 @@
 
     @elseif($pembayaran->status_tagihan == 'Lunas')
         <span class="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-2 py-1 rounded">SUDAH LUNAS</span>
+    @elseif(in_array($pembayaran->status_tagihan, ['Mencicil', 'Menyicil', 'Dicicil']))
+        <span class="text-amber-600 font-bold text-[10px] bg-amber-50 px-2 py-1 rounded italic">Menunggu cicilan berikutnya...</span>
     @else
         <span class="text-slate-300 text-[10px] italic">Menunggu upload...</span>
     @endif

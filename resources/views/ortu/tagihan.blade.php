@@ -20,6 +20,24 @@
         </div>
     </div>
 
+    {{-- Info Jam Operasional Verifikasi --}}
+    <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-6 flex items-center gap-4 shadow-sm">
+        <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shrink-0 shadow-md shadow-blue-200">
+            <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+                <p class="text-sm font-bold text-slate-800">Jam Operasional Verifikasi Pembayaran</p>
+                <span class="bg-blue-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0">07.00 - 15.00 WIB</span>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                Bukti pembayaran diverifikasi oleh Admin pada jam tersebut setiap hari kerja. Pembayaran di luar jam operasional akan diproses pada jam kerja berikutnya.
+            </p>
+        </div>
+    </div>
+
     {{-- Notifikasi Sukses --}}
     @if(session('sukses'))
         <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 mb-6 rounded-r-xl shadow-sm">
@@ -115,6 +133,7 @@
                                 </svg>
                                 <h6 class="text-sm font-bold text-amber-800">Sedang Diverifikasi</h6>
                                 <p class="text-[11px] text-amber-600 mt-1 font-medium">Pembayaran Anda sedang dicek oleh Admin.</p>
+                                <p class="text-[10px] text-amber-500 mt-1.5 font-semibold">Verifikasi diproses setiap hari kerja pukul 07.00 - 15.00 WIB.</p>
                             </div>
 
                         {{-- Bagian Cicilan Baru Masuk, Menunggu Dicek Admin, Tapi Belum Lunas --}}
@@ -127,6 +146,7 @@
                                 <p class="text-[11px] text-amber-600 mt-1 font-medium">
                                     Setelah disetujui, sisa tagihan Anda akan berkurang.
                                 </p>
+                                <p class="text-[10px] text-amber-500 mt-1.5 font-semibold">Verifikasi diproses setiap hari kerja pukul 07.00 - 15.00 WIB.</p>
                                 @if($isProgram && $sisaSlotCicilan > 0)
                                     <p class="text-[11px] text-amber-700 mt-2 font-bold">
                                         Sisa maksimal {{ $sisaSlotCicilan }}x cicilan lagi untuk melunasi.
@@ -285,6 +305,7 @@
                     <li>Pilih metode pembayaran (Bank atau QRIS).</li>
                     <li>Bayar dengan nominal <strong>persis</strong> sesuai Total Tagihan.</li>
                     <li>Simpan bukti bayar, lalu <i>upload</i> di bawah dan klik <strong>Kirim</strong>.</li>
+                    <li>Verifikasi diproses Admin pukul <strong>07.00 - 15.00 WIB</strong> setiap hari kerja.</li>
                 </ol>
             </div>
 

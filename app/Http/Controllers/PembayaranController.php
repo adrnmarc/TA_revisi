@@ -57,11 +57,15 @@ class PembayaranController extends Controller
             ->where('status', 'Menunggu Verifikasi')
             ->first();
 
-        if ($pembayaranPending && $pembayaranPending->jumlah_diterima > 0) {
-            $inputNominal = (float) $pembayaranPending->jumlah_diterima;
-        } else {
-            $inputNominal = $sisaTagihanAsli;
+        // FIX: Kalau tidak ada pembayaran yang benar-benar menunggu verifikasi,
+        // JANGAN proses apa pun. Sebelumnya kode ini fallback ke $sisaTagihanAsli,
+        // yang menyebabkan tombol Konfirmasi yang salah ke-klik (padahal orang tua
+        // belum mengirim cicilan baru) bikin tagihan langsung ditandai Lunas.
+        if (!$pembayaranPending) {
+            return back()->with('gagal', 'Tidak ada bukti pembayaran baru yang menunggu verifikasi untuk tagihan ini.');
         }
+
+        $inputNominal = (float) $pembayaranPending->jumlah_diterima;
 
         // 2. Mencegah pelunasan jika tagihan memang sudah lunas 100% dari awal
         if ($sisaTagihanAsli <= 0) {
@@ -74,23 +78,12 @@ class PembayaranController extends Controller
         }
 
         // 4. UPDATE TRANSAKSI PENDING JADI DITERIMA
-        if ($pembayaranPending) {
-            $pembayaranPending->update([
-                'status'          => 'Diterima',
-                'jumlah_diterima' => $inputNominal,
-                'user_id'         => Auth::id() ?? 1,
-                'tanggal_bayar'   => now()->format('Y-m-d'),
-            ]);
-        } else {
-            Pembayaran::create([
-                'id_detail'       => $detail->id_detail,
-                'user_id'         => Auth::id() ?? 1,
-                'tanggal_bayar'   => now()->format('Y-m-d'),
-                'jumlah_diterima' => $inputNominal,
-                'bukti_bayar'     => $detail->bukti_bayar,
-                'status'          => 'Diterima'
-            ]);
-        }
+        $pembayaranPending->update([
+            'status'          => 'Diterima',
+            'jumlah_diterima' => $inputNominal,
+            'user_id'         => Auth::id() ?? 1,
+            'tanggal_bayar'   => now()->format('Y-m-d'),
+        ]);
 
         // 5. HITUNG TOTAL KESELURUHAN & UPDATE STATUS TAGIHAN INDUK
         $totalSekarang = $totalDiterimaSaja + $inputNominal;
@@ -108,12 +101,17 @@ class PembayaranController extends Controller
         $request->validate(['alasan' => 'required|string']);
         $detail = DetailTagihan::findOrFail($id);
 
-        Pembayaran::where('id_detail', $detail->id_detail)
+        $adaYangDitolak = Pembayaran::where('id_detail', $detail->id_detail)
             ->where('status', 'Menunggu Verifikasi')
             ->update([
                 'status' => 'Ditolak',
                 'keterangan' => $request->alasan
             ]);
+
+        // FIX: kalau tidak ada pembayaran pending yang ditolak, jangan ubah status tagihan
+        if ($adaYangDitolak === 0) {
+            return back()->with('gagal', 'Tidak ada bukti pembayaran baru yang menunggu verifikasi untuk tagihan ini.');
+        }
 
         if ($detail->bukti_bayar) {
             $fotoTerpakaiDiTempatLain = DetailTagihan::where('bukti_bayar', $detail->bukti_bayar)

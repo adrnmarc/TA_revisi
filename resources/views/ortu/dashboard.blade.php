@@ -112,9 +112,16 @@
 
     {{-- STATISTIK — kartu dengan aksen washi tape --}}
     @php
+        // FIX: sebelumnya "$sudahDibayar" dihitung ulang di sini dengan
+        // $riwayat->where('status_tagihan','Lunas')->sum('jumlah_bayar'), yang mengabaikan
+        // cicilan yang belum lunas 100%. Akibatnya tagihan yang sudah dicicil sebagian
+        // (status "Mencicil") dianggap Rp 0 padahal sudah ada pembayaran yang dikonfirmasi admin.
+        // $totalBayar sudah dihitung dengan benar di OrtuController@dashboard() —
+        // termasuk menjumlahkan pembayaran cicilan parsial dari tabel pembayarans —
+        // jadi di sini kita pakai itu langsung, bukan menghitung ulang dari status saja.
         $totalTagihan = $riwayat->sum('jumlah_bayar');
-        $sudahDibayar = $riwayat->where('status_tagihan','Lunas')->sum('jumlah_bayar');
-        $belumDibayar = $totalTagihan - $sudahDibayar;
+        $sudahDibayar = $totalBayar;
+        $belumDibayar = max($totalTagihan - $sudahDibayar, 0);
         $progress     = $totalTagihan > 0 ? round(($sudahDibayar / $totalTagihan) * 100) : 0;
 
         $stats = [
