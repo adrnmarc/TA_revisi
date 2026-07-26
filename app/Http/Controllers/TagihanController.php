@@ -14,6 +14,14 @@ use Carbon\Carbon;
 
 class TagihanController extends Controller
 {
+    // Status yang mengunci tagihan dari EDIT dan HAPUS (satu, bulk, maupun langsung ke endpoint).
+    // Dipakai bareng di update(), destroy(), dan destroyBulk() supaya konsisten satu aturan.
+    // CATATAN PENTING: sertakan SEMUA variasi penulisan status "sedang dicicil" yang
+    // benar-benar tersimpan di database (PembayaranController@konfirmasiLunas menulis
+    // 'Mencicil', bukan 'Dicicil') — kalau daftar ini cuma berisi 'Dicicil', tagihan yang
+    // baru saja dicicil TIDAK akan terdeteksi terkunci dan tetap bisa diedit/dihapus admin.
+    private const STATUS_TERKUNCI = ['Lunas', 'Dicicil', 'Mencicil', 'Menyicil'];
+
     /**
      * Menampilkan daftar tagihan di sisi ADMIN
      */
@@ -216,6 +224,17 @@ class TagihanController extends Controller
      */
     public function update(Request $request, $id_tagihan)
     {
+        $tagihan = Tagihan::findOrFail($id_tagihan);
+
+        // FIX KEAMANAN: guard di SERVER, bukan cuma di tombol UI. Tombol yang disabled di
+        // blade hanya mencegah klik tidak sengaja — request PUT ke endpoint ini masih bisa
+        // dikirim langsung (Postman, curl, dll) melewati tampilan sama sekali. Jadi larangan
+        // "tidak boleh diedit kalau sudah Lunas/Dicicil" WAJIB ditegakkan di sini juga.
+        $detailSaatIni = DetailTagihan::where('id_tagihan', $tagihan->id_tagihan)->first();
+        if ($detailSaatIni && in_array($detailSaatIni->status_tagihan, self::STATUS_TERKUNCI)) {
+            return redirect()->back()->with('error', 'Tagihan yang sudah ' . strtolower($detailSaatIni->status_tagihan) . ' tidak bisa diedit.');
+        }
+
         $request->validate([
             'siswa_id' => 'required|exists:siswas,nis',
             'id_kategori' => 'required|exists:kategori_tagihans,id', 
@@ -225,7 +244,6 @@ class TagihanController extends Controller
             'status_tagihan' => 'required|in:Belum Lunas,Dicicil,Lunas',
         ]);
 
-        $tagihan = Tagihan::findOrFail($id_tagihan);
         $siswa = Siswa::where('nis', $request->siswa_id)->firstOrFail();
         $kategori = KategoriTagihan::findOrFail($request->id_kategori); 
 
@@ -285,8 +303,14 @@ class TagihanController extends Controller
     {
         $tagihan = Tagihan::findOrFail($id_tagihan);
 
-        DB::transaction(function () use ($tagihan) {
-            $detail = DetailTagihan::where('id_tagihan', $tagihan->id_tagihan)->first();
+        // FIX KEAMANAN: sama seperti update() — wajib dicek di server, bukan cuma
+        // mengandalkan tombol hapus yang disembunyikan/disabled di tampilan admin.
+        $detail = DetailTagihan::where('id_tagihan', $tagihan->id_tagihan)->first();
+        if ($detail && in_array($detail->status_tagihan, self::STATUS_TERKUNCI)) {
+            return redirect()->back()->with('error', 'Tagihan yang sudah ' . strtolower($detail->status_tagihan) . ' tidak bisa dihapus.');
+        }
+
+        DB::transaction(function () use ($tagihan, $detail) {
             if ($detail) {
                 $detail->pembayarans()->delete();
                 $detail->delete();
@@ -307,7 +331,10 @@ class TagihanController extends Controller
             'ids.*' => 'exists:tagihans,id_tagihan',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $berhasil = 0;
+        $dilewati = 0;
+
+        DB::transaction(function () use ($request, &$berhasil, &$dilewati) {
             foreach ($request->ids as $idTagihan) {
                 $tagihan = Tagihan::find($idTagihan);
                 if (!$tagihan) {
@@ -315,17 +342,31 @@ class TagihanController extends Controller
                 }
 
                 $detail = DetailTagihan::where('id_tagihan', $tagihan->id_tagihan)->first();
+
+                // FIX KEAMANAN: sama seperti destroy() satuan — kalau ternyata ada ID tagihan
+                // Lunas/Dicicil yang ikut terselip di request (baik lewat bug di frontend
+                // maupun request yang sengaja dipalsukan), tagihan itu DILEWATI, tidak dihapus.
+                if ($detail && in_array($detail->status_tagihan, self::STATUS_TERKUNCI)) {
+                    $dilewati++;
+                    continue;
+                }
+
                 if ($detail) {
                     $detail->pembayarans()->delete();
                     $detail->delete();
                 }
 
                 $tagihan->delete();
+                $berhasil++;
             }
         });
 
-        $jumlah = count($request->ids);
-        return redirect()->back()->with('sukses', "$jumlah tagihan berhasil dihapus.");
+        $pesan = "$berhasil tagihan berhasil dihapus.";
+        if ($dilewati > 0) {
+            $pesan .= " $dilewati tagihan dilewati karena sudah Lunas/Dicicil dan tidak boleh dihapus.";
+        }
+
+        return redirect()->back()->with('sukses', $pesan);
     }
 
     /**

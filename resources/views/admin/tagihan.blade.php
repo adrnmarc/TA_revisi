@@ -21,6 +21,10 @@
             width: 17px;
             height: 17px;
         }
+        .checkbox-tagihan:disabled {
+            accent-color: #cbd5e1;
+            cursor: not-allowed;
+        }
 
         /* Kolom checkbox disembunyikan secara default */
         .kolom-pilih {
@@ -121,9 +125,21 @@
                 </thead>
                 <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-100">
                     @forelse($tagihans as $tagihan)
+                        @php
+                            // FIX: satu sumber kebenaran dipakai bareng di kolom checkbox, status, dan aksi,
+                            // supaya tagihan yang sudah Lunas atau lagi dicicil (dalam penulisan apa pun yang
+                            // benar-benar tersimpan di database — Dicicil / Mencicil / Menyicil) tidak bisa
+                            // dihapus/diedit admin. Sebelumnya di sini cuma dicek 'Dicicil' saja, padahal
+                            // PembayaranController@konfirmasiLunas menulis status 'Mencicil', jadi tagihan
+                            // yang baru dicicil tidak terdeteksi terkunci sama sekali.
+                            $statusTagihanIni = optional($tagihan->detailTagihan)->status_tagihan ?? 'Belum Lunas';
+                            $sedangDicicil = in_array($statusTagihanIni, ['Dicicil', 'Mencicil', 'Menyicil']);
+                            $tidakBisaDihapus = $statusTagihanIni == 'Lunas' || $sedangDicicil;
+                        @endphp
                         <tr class="baris-data hover:bg-slate-50/50 transition-colors">
                             <td class="kolom-pilih py-4 pl-6 pr-2">
-                                <input type="checkbox" class="checkbox-tagihan" value="{{ $tagihan->id_tagihan }}">
+                                <input type="checkbox" class="checkbox-tagihan" value="{{ $tagihan->id_tagihan }}"
+                                       @if($tidakBisaDihapus) disabled title="Tagihan {{ strtolower($statusTagihanIni) }} tidak bisa dihapus" @endif>
                             </td>
                             <td class="py-4 px-6 text-slate-900 font-semibold kolom-siswa">{{ optional($tagihan->siswa)->nama ?? 'Tidak Diketahui' }}</td>
                             <td class="py-4 px-6 kolom-jenis">
@@ -140,15 +156,11 @@
                                 Rp {{ number_format(optional($tagihan->detailTagihan)->jumlah_bayar ?? 0, 0, ',', '.') }}
                             </td>
                             <td class="py-4 px-6">
-                                @php
-                                    $status = optional($tagihan->detailTagihan)->status_tagihan ?? 'Belum Lunas';
-                                @endphp
-
-                                @if($status == 'Lunas')
+                                @if($statusTagihanIni == 'Lunas')
                                     <span class="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg border border-emerald-100">
                                         Lunas
                                     </span>
-                                @elseif($status == 'Dicicil')
+                                @elseif($sedangDicicil)
                                     <span class="px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 rounded-lg border border-amber-100">
                                         Dicicil
                                     </span>
@@ -162,7 +174,8 @@
                                 <div class="flex items-center justify-center gap-2">
                                     {{-- PERBAIKAN: Mengirim 2 data tanggal terpisah ke Javascript --}}
                                     <button type="button"
-                                            class="btn-edit-tagihan p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                            @if($tidakBisaDihapus) disabled title="Tagihan yang sudah {{ strtolower($statusTagihanIni) }} tidak bisa diedit" @endif
+                                            class="btn-edit-tagihan p-1.5 rounded-lg transition-colors {{ $tidakBisaDihapus ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 cursor-pointer' }}"
                                             data-id="{{ $tagihan->id_tagihan }}"
                                             data-nis="{{ $tagihan->nis }}"
                                             data-kategori-id="{{ $tagihan->id_kategori }}"
@@ -173,14 +186,22 @@
                                             data-cicilan="{{ optional($tagihan->detailTagihan)->cicilan_ke ?? '' }}">
                                         <i data-lucide="pencil" class="w-4 h-4"></i>
                                     </button>
-                                    
-                                    <form action="/admin/tagihan/{{ $tagihan->id_tagihan }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data tagihan ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
+
+                                    @if($tidakBisaDihapus)
+                                        <button type="button" disabled
+                                                title="Tagihan yang sudah {{ strtolower($statusTagihanIni) }} tidak bisa dihapus"
+                                                class="p-1.5 text-slate-200 rounded-lg cursor-not-allowed">
                                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                                         </button>
-                                    </form>
+                                    @else
+                                        <form action="/admin/tagihan/{{ $tagihan->id_tagihan }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data tagihan ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -490,6 +511,7 @@
             // ===== PILIH BANYAK / HAPUS MASSAL TAGIHAN =====
             const checkAllTagihan = document.getElementById('checkAllTagihan');
             const checkboxTagihan = document.querySelectorAll('.checkbox-tagihan');
+            const checkboxTagihanBisaDihapus = document.querySelectorAll('.checkbox-tagihan:not(:disabled)');
             const bulkActionBar = document.getElementById('bulkActionBar');
             const bulkCount = document.getElementById('bulkCount');
             const formBulkDelete = document.getElementById('formBulkDelete');
@@ -497,7 +519,9 @@
             const btnBulkCancel = document.getElementById('btnBulkCancel');
 
             function perbaruiActionBar() {
-                const terpilih = document.querySelectorAll('.checkbox-tagihan:checked');
+                // FIX: hanya hitung/anggap terpilih checkbox yang TIDAK disabled,
+                // supaya tagihan Lunas/Dicicil tidak pernah ikut ke dalam hapus massal.
+                const terpilih = document.querySelectorAll('.checkbox-tagihan:checked:not(:disabled)');
 
                 if (terpilih.length > 0) {
                     bulkActionBar.classList.add('tampil');
@@ -506,7 +530,7 @@
                     bulkActionBar.classList.remove('tampil');
                 }
 
-                checkAllTagihan.checked = checkboxTagihan.length > 0 && terpilih.length === checkboxTagihan.length;
+                checkAllTagihan.checked = checkboxTagihanBisaDihapus.length > 0 && terpilih.length === checkboxTagihanBisaDihapus.length;
             }
 
             function nonaktifkanModePilih() {
@@ -537,7 +561,8 @@
 
             if (checkAllTagihan) {
                 checkAllTagihan.addEventListener('change', function() {
-                    checkboxTagihan.forEach(cb => cb.checked = checkAllTagihan.checked);
+                    // FIX: "pilih semua" cuma menyentuh checkbox yang tidak disabled
+                    checkboxTagihanBisaDihapus.forEach(cb => cb.checked = checkAllTagihan.checked);
                     perbaruiActionBar();
                 });
             }
@@ -556,7 +581,7 @@
 
             if (btnBulkDelete) {
                 btnBulkDelete.addEventListener('click', function() {
-                    const terpilih = document.querySelectorAll('.checkbox-tagihan:checked');
+                    const terpilih = document.querySelectorAll('.checkbox-tagihan:checked:not(:disabled)');
                     if (terpilih.length === 0) return;
 
                     const konfirmasi = confirm(
